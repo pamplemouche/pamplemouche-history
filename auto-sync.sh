@@ -16,7 +16,7 @@ inotifywait -m -r -e close_write,moved_to,create,delete --exclude '\.git' "$DIR"
     # Git add, commit et push
     git add .
     git commit -m "Auto-save: $(date +'%Y-%m-%d %H:%M:%S')"
-    git push origin main
+    git push -u origin main --force
     
     echo "✅ Synchronisé sur GitHub !"
 done
