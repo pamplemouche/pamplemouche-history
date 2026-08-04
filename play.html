@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pax Historia - Session</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        #map { position: absolute; top: 0; bottom: 60px; width: 100%; z-index: 1; }
+        #overlay-stats {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 20px; border-radius: 20px;
+            display: flex; gap: 15px; backdrop-filter: blur(4px);
+        }
+        #time-control {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 8px;
+            display: flex; flex-direction: column; gap: 5px; backdrop-filter: blur(4px);
+        }
+        #action-input-container {
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            width: 80%; max-width: 600px; display: none;
+        }
+        #action-input-container input {
+            width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #444;
+            background: rgba(20, 20, 20, 0.9); color: white; outline: none;
+        }
+        .navbar {
+            position: absolute; bottom: 0; width: 100%; height: 60px; background: #1a1a1a;
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333;
+        }
+        .nav-btn {
+            background: none; border: none; color: #888; font-size: 24px; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .nav-btn span { font-size: 10px; text-transform: uppercase; margin-top: 2px; }
+        .country-label {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+            font-weight: bold;
+            font-size: 10px;
+            text-shadow: 1px 1px 2px #000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay-stats">
+        <span id="country-display" style="border-right: 1px solid #555; padding-right: 15px; font-weight: bold; color: #ffcc00;"></span>
+        <span>📅 <span id="date-display"></span></span>
+        <span>⚖️ <span id="stability">70</span>%</span>
+        <span>💰 <span id="gold">500</span></span>
+    </div>
+
+    <div id="time-control">
+        <select id="time-step" style="background: #222; color: white; border: 1px solid #444;">
+            <option value="7">1 Semaine</option>
+            <option value="30">1 Mois</option>
+            <option value="365" selected>1 An</option>
+            <option value="custom">Custom...</option>
+        </select>
+        <button onclick="advanceTime()" style="background: #4a3b2b; color: white; border: none; padding: 5px; cursor: pointer;">Procéder</button>
+    </div>
+
+    <div id="action-input-container">
+        <input type="text" id="ai-command" placeholder="Donnez un ordre à votre empire..." onkeypress="if(event.key === 'Enter') sendCommand()">
+    </div>
+
+    <div id="map"></div>
+    <nav class="navbar">
+        <button class="nav-btn" onclick="playAction()">⚡<span>Action</span></button>
+        <button class="nav-btn" onclick="askGemini()">❓<span>IA</span></button>
+        <button class="nav-btn" onclick="location.href='index.html'">🏠<span>Menu</span></button>
+    </nav>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const period = urlParams.get('period') || 'rome';
+        const country = urlParams.get('country') || 'Inconnu';
+        let currentDate = new Date(parseInt(urlParams.get('year')) || 1000, 0, 1);
+
+        const configs = {
+            'rome': { center: [41.9, 12.5], zoom: 4 },
+            'medieval': { center: [48.8, 2.3], zoom: 4 },
+            'renaissance': { center: [43.7, 11.2], zoom: 5 },
+            'revolution': { center: [48.8, 2.3], zoom: 5 },
+            'ww1': { center: [50.0, 10.0], zoom: 4 },
+            'coldwar': { center: [52.5, 13.4], zoom: 3 }
+        };
+
+        const config = configs[period];
+        document.getElementById('country-display').innerText = country.toUpperCase();
+        
+        function updateDateDisplay() {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', options);
+        }
+        updateDateDisplay();
+
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(config.center, config.zoom);
+        // Fond de carte sombre pour faire ressortir les couleurs des pays
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+
+        // Couleurs de drapeaux étendues
+        const flagColors = {
+            'FRA': '#002395', 'USA': '#B22234', 'CHN': '#DE2910', 'RUS': '#0039A6',
+            'GBR': '#012169', 'DEU': '#000000', 'ITA': '#008C45', 'ESP': '#AA151B',
+            'JPN': '#BC002D', 'BRA': '#009739', 'CAN': '#FF0000', 'IND': '#FF9933',
+            'AUS': '#00008B', 'MEX': '#006847', 'EGY': '#C09304', 'GRC': '#0D5EAF'
+        };
+
+        fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson')
+            .then(res => res.json())
+            .then(data => {
+                L.geoJson(data, {
+                    style: function(feature) {
+                        const code = feature.properties.ISO_A3;
+                        const color = flagColors[code] || '#444';
+                        return {
+                            fillColor: color,
+                            weight: 1,
+                            opacity: 1,
+                            color: 'rgba(255,255,255,0.3)',
+                            fillOpacity: 0.5
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const name = feature.properties.ADMIN;
+                        
+                        // Ajouter le nom du pays en étiquette permanente
+                        layer.bindTooltip(name, {
+                            permanent: true,
+                            direction: 'center',
+                            className: 'country-label'
+                        }).openTooltip();
+
+                        layer.on('click', function(e) {
+                            L.popup()
+                                .setLatLng(e.latlng)
+                                .setContent(`
+                                    <div style="color:black; padding:10px;">
+                                        <h3 style="margin:0">${name}</h3>
+                                        <hr>
+                                        <p><b>Régime:</b> Souverain</p>
+                                        <p><b>Statut:</b> Stable</p>
+                                        <button onclick="alert('Diplomatie avec ${name}')">Diplomatie</button>
+                                    </div>
+                                `)
+                                .openOn(map);
+                        });
+                    }
+                }).addTo(map);
+            });
+
+        async function askGemini() {
+            alert("L'IA Gemini analyse l'état du monde à la date du " + currentDate.toLocaleDateString());
+        }
+
+        function playAction() {
+            const container = document.getElementById('action-input-container');
+            container.style.display = container.style.display === 'block' ? 'none' : 'block';
+            if(container.style.display === 'block') document.getElementById('ai-command').focus();
+        }
+
+        function sendCommand() {
+            const cmd = document.getElementById('ai-command').value;
+            if(!cmd) return;
+            alert("Ordre envoyé : " + cmd + ". Avancez le temps pour voir les conséquences.");
+            document.getElementById('ai-command').value = "";
+            document.getElementById('action-input-container').style.display = 'none';
+        }
+
+        function advanceTime() {
+            let step = document.getElementById('time-step').value;
+            let days = 0;
+            if (step === 'custom') {
+                days = parseInt(prompt("Nombre de jours à avancer :", "100")) || 0;
+            } else {
+                days = parseInt(step);
+            }
+            currentDate.setDate(currentDate.getDate() + days);
+            updateDateDisplay();
+            // Ici, on pourrait déclencher l'IA pour traiter les commandes en attente
+        }
+    </script>
+</body>
+</html>

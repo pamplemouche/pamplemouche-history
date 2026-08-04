@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pamplemouche History - Parties</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0b0e14;
+      color: #e2e8f0;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Header Haut */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #0b0e14;
+      border-bottom: 1px solid #1a202c;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 1px;
+    }
+
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      background: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0b0e14;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .coins-badge {
+      background: #161b26;
+      border: 1px solid #2d3748;
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #facc15;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border: 2px solid #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #ffffff;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+      transition: transform 0.2s ease;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    .user-avatar.guest {
+      background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+      border: 2px solid #475569;
+      color: #94a3b8;
+      box-shadow: none;
+    }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #334155;
+      transition: .4s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #3b82f6; }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    .main-content {
+      flex: 1;
+      padding: 2.5rem 3rem;
+      overflow-y: auto;
+    }
+
+    .section-header {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header span {
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    .subsection-title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #cbd5e1;
+      margin-bottom: 1.25rem;
+    }
+
+    .scenarios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .scenario-card {
+      background-color: #161b26;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .scenario-card:hover {
+      transform: translateY(-4px);
+      border-color: #475569;
+    }
+
+    .card-image-wrapper {
+      position: relative;
+      height: 140px;
+      background-color: #1e293b;
+      background-image: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    .country-tag {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .card-info {
+      padding: 1rem;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-meta {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .bottom-navbar {
+      height: 65px;
+      background-color: #0f141d;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 20px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item:hover {
+      color: #f8fafc;
+    }
+
+    .nav-item.active {
+      background-color: #2e1065;
+      color: #e9d5ff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">P</div>
+        <span>Pamplemouche History</span>
+      </div>
+
+      <div class="user-actions">
+        <div class="toggle-container">
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider"></span>
+          </label>
+          <span>Afficher les parties masquées</span>
+        </div>
+
+        <div class="coins-badge">
+          🍊 <span id="user-pamp-balance">0 PAMP</span>
+        </div>
+
+        <div class="user-avatar" id="userAvatar" title="Profil">?</div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <h2 class="section-header">Vos parties <span>/ Tout</span></h2>
+      <h3 class="subsection-title">Continuer à jouer</h3>
+
+      <div class="scenarios-grid">
+        <div class="scenario-card" onclick="lancerPartie('modern-day')">
+          <div class="card-image-wrapper">
+            <div class="country-tag">Japan</div>
+          </div>
+          <div class="card-info">
+            <div class="card-title">Modern Day</div>
+            <div class="card-meta">2 tours · il y a 9min · Solo</div>
+          </div>
+        </div>
+
+        <div class="scenario-card" onclick="lancerPartie('napoleon')">
+          <div class="card-image-wrapper">
+            <div class="country-tag">France</div>
+          </div>
+          <div class="card-info">
+            <div class="card-title">Guerre Napoléonienne</div>
+            <div class="card-meta">12 tours · il y a 2h · Solo</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <nav class="bottom-navbar">
+      <div class="nav-item active"><span>🎮</span> Parties</div>
+      <div class="nav-item"><span>🎬</span> Scénarios</div>
+      <div class="nav-item"><span>🚩</span> Drapeaux</div>
+      <div class="nav-item"><span>👥</span> Communauté</div>
+    </nav>
+  </div>
+
+  <script>
+    const API_URL = 'https://arc.pamplemouche.com';
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Détection du token dans le hash (#token=...)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      let token = hashParams.get('token');
+
+      if (token) {
+        localStorage.setItem('pamp_token', token);
+        window.history.replaceState(null, null, window.location.pathname);
+      } else {
+        token = localStorage.getItem('pamp_token');
+      }
+
+      // 2. Traitement selon jeton présent ou absent
+      if (token) {
+        await chargerProfilUtilisateur(token);
+      } else {
+        afficherModeInvite();
+      }
+    });
+
+    async function chargerProfilUtilisateur(token) {
+      try {
+        const res = await fetch(`${API_URL}/api/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.username) {
+          const userObj = {
+            username: data.username,
+            pampBalance: data.pamp || data.coins || 0,
+            isGuest: false
+          };
+          localStorage.setItem('pamplemouche_user', JSON.stringify(userObj));
+          afficherJoueurConnecte(userObj);
+        } else {
+          afficherModeInvite();
+        }
+      } catch (err) {
+        console.error("Erreur de connexion à l'API Pamplemouche:", err);
+        afficherModeInvite();
+      }
+    }
+
+    function afficherJoueurConnecte(user) {
+      const pampDisplay = document.getElementById('user-pamp-balance');
+      const avatarDisplay = document.getElementById('userAvatar');
+
+      if (pampDisplay) pampDisplay.textContent = `${user.pampBalance} PAMP`;
+      if (avatarDisplay) {
+        avatarDisplay.textContent = user.username.charAt(0).toUpperCase();
+        avatarDisplay.classList.remove('guest');
+        avatarDisplay.title = `Connecté en tant que ${user.username}`;
+      }
+    }
+
+    function afficherModeInvite() {
+      const guestUser = JSON.parse(localStorage.getItem('guest_user'));
+      const pampDisplay = document.getElementById('user-pamp-balance');
+      const avatarDisplay = document.getElementById('userAvatar');
+
+      if (pampDisplay) pampDisplay.textContent = `0 PAMP`;
+      if (avatarDisplay) {
+        avatarDisplay.textContent = "🕵️";
+        avatarDisplay.classList.add('guest');
+        avatarDisplay.title = guestUser ? `Mode Invité (${guestUser.username})` : "Mode Invité";
+      }
+    }
+
+    function lancerPartie(scenarioId) {
+      localStorage.setItem('current_scenario', scenarioId);
+      window.location.href = "map.html";
+    }
+  </script>
+
+</body>
+</html>

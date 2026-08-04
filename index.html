@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pamplemouche History</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0b0e14;
+      color: #e2e8f0;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .menu-container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    h1 {
+      font-family: 'Georgia', serif;
+      font-size: 3.5rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #f1f5f9;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    .btn {
+      background: transparent;
+      color: #cbd5e1;
+      border: 2px solid #64748b;
+      padding: 0.8rem 2.5rem;
+      font-size: 1.25rem;
+      font-family: inherit;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+      width: 100%;
+    }
+
+    .btn:hover {
+      background-color: #e2e8f0;
+      color: #0f141d;
+      border-color: #e2e8f0;
+      box-shadow: 0 0 15px rgba(226, 232, 240, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      border-color: #475569;
+      color: #94a3b8;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 14, 20, 0.85);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background-color: #161b26;
+      border: 1px solid #2d3748;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .modal-content h2 {
+      font-size: 1.4rem;
+      color: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="menu-container">
+    <h1>Pamplemouche History</h1>
+    <button class="btn" onclick="ouvrirModal()">Commencer</button>
+  </div>
+
+  <div class="modal-overlay" id="modalChoice">
+    <div class="modal-content">
+      <h2>Rejoindre la partie</h2>
+      <button class="btn" onclick="seConnecter()">Se connecter</button>
+      <button class="btn btn-secondary" onclick="jouerInvite()">Jouer en tant qu'invité</button>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modalChoice');
+
+    function ouvrirModal() {
+      modal.classList.add('active');
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+
+    function seConnecter() {
+      // Construction de l'URL de retour vers games.html
+      const redirectUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'games.html';
+      window.location.href = `https://login.pamplemouche.com?redirect=${encodeURIComponent(redirectUrl)}`;
+    }
+
+    function jouerInvite() {
+      if (!localStorage.getItem('guest_user')) {
+        const randomId = Math.floor(1000 + Math.random() * 9000);
+        const guestUser = {
+          username: "Invité_" + randomId,
+          pampBalance: 0,
+          isGuest: true
+        };
+        localStorage.setItem('guest_user', JSON.stringify(guestUser));
+      }
+      window.location.href = "games.html";
+    }
+  </script>
+
+</body>
+</html>
