@@ -1,9 +1,9 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pamplemouche History - Play</title>
+  <title>Pamplemouche History - Partie en cours</title>
   
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
@@ -17,7 +17,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #0b0e14;
+      background-color: #06080c;
       color: #e2e8f0;
       height: 100vh;
       width: 100vw;
@@ -26,15 +26,18 @@
       flex-direction: column;
     }
 
-    /* Header Haut */
-    .app-header {
+    /* ============================================================ */
+    /* 1. HEADER & BARRE DE TEMPS                                  */
+    /* ============================================================ */
+    .game-header {
+      height: 52px;
+      background-color: #0b0e14;
+      border-bottom: 1px solid #1e293b;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.75rem 1.5rem;
-      background-color: #0f141d;
-      border-bottom: 1px solid #1e293b;
-      z-index: 10;
+      padding: 0 1.2rem;
+      z-index: 100;
     }
 
     .brand {
@@ -42,7 +45,7 @@
       align-items: center;
       gap: 0.75rem;
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       cursor: pointer;
     }
 
@@ -59,6 +62,43 @@
       font-size: 0.85rem;
     }
 
+    /* Commandes de temps / Vitesse */
+    .time-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #111622;
+      border: 1px solid #2d3748;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+    }
+
+    .time-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .time-btn:hover, .time-btn.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .date-display {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #f8fafc;
+      margin-left: 0.5rem;
+      border-left: 1px solid #334155;
+      padding-left: 0.75rem;
+    }
+
     .user-actions {
       display: flex;
       align-items: center;
@@ -68,7 +108,7 @@
     .coins-badge {
       background: #161b26;
       border: 1px solid #2d3748;
-      padding: 0.35rem 0.8rem;
+      padding: 0.3rem 0.8rem;
       border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -79,8 +119,8 @@
     }
 
     .user-avatar {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
       border: 2px solid #60a5fa;
@@ -88,7 +128,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.9rem;
       color: #ffffff;
       cursor: pointer;
     }
@@ -99,115 +139,284 @@
       color: #94a3b8;
     }
 
-    /* Zone de la Carte */
-    .map-container {
+    /* ============================================================ */
+    /* 2. DISPOSITION PRINCIPALE (MAP + PANNEAUX)                  */
+    /* ============================================================ */
+    .game-body {
       flex: 1;
       position: relative;
-      background-color: #080a0f; /* Couleur de l'océan */
-      cursor: grab;
+      display: flex;
+      overflow: hidden;
     }
 
-    .map-container:active {
-      cursor: grabbing;
-    }
-
-    svg {
-      width: 100%;
+    /* Carte SVG */
+    .map-container {
+      flex: 1;
       height: 100%;
+      background-color: #06090e;
+      cursor: grab;
+      position: relative;
     }
 
-    /* Styles des Pays */
+    .map-container:active { cursor: grabbing; }
+
+    svg { width: 100%; height: 100%; }
+
     .country {
-      fill: #1e293b;
-      stroke: #334155;
-      stroke-width: 0.5px;
+      fill: #1a2232;
+      stroke: #2e3b52;
+      stroke-width: 0.6px;
       transition: fill 0.15s ease, stroke 0.15s ease;
     }
 
     .country:hover {
-      fill: #3b82f6;
+      fill: #2563eb;
       stroke: #60a5fa;
-      stroke-width: 1px;
       cursor: pointer;
     }
 
     .country.selected {
-      fill: #8b5cf6;
-      stroke: #c084fc;
-      stroke-width: 1.5px;
+      fill: #7c3aed;
+      stroke: #a78bfa;
+      stroke-width: 1.2px;
     }
 
-    /* Infobulle (Tooltip) au survol */
+    /* Tooltip Carte */
     .map-tooltip {
       position: absolute;
-      padding: 0.5rem 0.8rem;
-      background: rgba(15, 20, 29, 0.9);
+      padding: 0.4rem 0.7rem;
+      background: rgba(11, 15, 23, 0.92);
       border: 1px solid #334155;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       pointer-events: none;
       display: none;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      z-index: 20;
+      backdrop-filter: blur(6px);
+      z-index: 50;
     }
 
-    /* Panneau d'action de jeu (Bas de page) */
-    .game-hud {
+    /* ============================================================ */
+    /* 3. PANNEAU LATÉRAL GAUCHE (NATION / STATS)                  */
+    /* ============================================================ */
+    .side-panel {
       position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(22, 27, 38, 0.95);
-      border: 1px solid #2d3748;
-      backdrop-filter: blur(10px);
-      padding: 0.8rem 1.5rem;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      z-index: 10;
-    }
-
-    .hud-info {
+      top: 15px;
+      left: 15px;
+      width: 330px;
+      max-height: calc(100% - 90px);
+      background: rgba(15, 20, 29, 0.92);
+      border: 1px solid #273549;
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
       display: flex;
       flex-direction: column;
+      z-index: 20;
+      overflow: hidden;
     }
 
-    .hud-country-name {
+    .panel-header {
+      padding: 1rem;
+      background: rgba(22, 30, 44, 0.6);
+      border-bottom: 1px solid #273549;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .flag-icon {
+      font-size: 1.8rem;
+    }
+
+    .nation-details h2 {
+      font-size: 1.1rem;
       font-weight: 700;
-      font-size: 1rem;
       color: #f8fafc;
     }
 
-    .hud-status {
+    .nation-details p {
       font-size: 0.75rem;
       color: #94a3b8;
     }
 
-    .btn-action {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 0.6rem 1.4rem;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s ease;
+    /* Onglets du Panneau */
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid #273549;
+      background: #0f141d;
     }
 
-    .btn-action:hover {
-      background: #2563eb;
+    .tab-btn {
+      flex: 1;
+      padding: 0.6rem 0;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: #38bdf8;
+      border-bottom: 2px solid #38bdf8;
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .panel-content {
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      font-size: 0.85rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0.6rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-label { color: #94a3b8; }
+    .stat-value { font-weight: 600; color: #f1f5f9; }
+
+    /* ============================================================ */
+    /* 4. CHAT IA & EVENT LOG (BAS GAUCHE)                         */
+    /* ============================================================ */
+    .ai-console {
+      position: absolute;
+      bottom: 20px;
+      left: 15px;
+      width: 420px;
+      background: rgba(13, 17, 25, 0.94);
+      border: 1px solid #273549;
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+      overflow: hidden;
+    }
+
+    .console-header {
+      padding: 0.6rem 1rem;
+      background: #161e2e;
+      border-bottom: 1px solid #273549;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #818cf8;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .console-logs {
+      height: 110px;
+      padding: 0.75rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: #cbd5e1;
+    }
+
+    .log-entry {
+      line-height: 1.3;
+    }
+
+    .log-entry span.author {
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .console-input-box {
+      display: flex;
+      padding: 0.5rem;
+      background: #0f141d;
+      border-top: 1px solid #273549;
+    }
+
+    .console-input-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #f8fafc;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      outline: none;
+    }
+
+    .console-input-box button {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ============================================================ */
+    /* 5. BARRE D'ACTION BASSE (TIMELINE HUD)                      */
+    /* ============================================================ */
+    .bottom-hud {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(15, 20, 29, 0.92);
+      border: 1px solid #273549;
+      backdrop-filter: blur(12px);
+      padding: 0.7rem 1.4rem;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      z-index: 20;
+    }
+
+    .btn-next-turn {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      padding: 0.65rem 1.4rem;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-next-turn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
     }
   </style>
 </head>
 <body>
 
-  <header class="app-header">
+  <header class="game-header">
     <div class="brand" onclick="window.location.href='games.html'">
       <div class="brand-logo">P</div>
       <span>Pamplemouche History</span>
+    </div>
+
+    <div class="time-controls">
+      <button class="time-btn" onclick="togglePause()">⏸</button>
+      <button class="time-btn active" onclick="setSpeed(1)">1x</button>
+      <button class="time-btn" onclick="setSpeed(2)">2x</button>
+      <button class="time-btn" onclick="setSpeed(5)">5x</button>
+      <span class="date-display" id="gameDate">1 Janv. 1936</span>
     </div>
 
     <div class="user-actions">
@@ -218,17 +427,69 @@
     </div>
   </header>
 
-  <div class="map-container" id="mapContainer">
-    <div class="map-tooltip" id="mapTooltip"></div>
-    <svg id="worldMap"></svg>
-  </div>
-
-  <div class="game-hud">
-    <div class="hud-info">
-      <span class="hud-country-name" id="selectedCountryName">Cliquez sur un pays</span>
-      <span class="hud-status" id="selectedCountryStatus">Tour 1 - Phase de sélection</span>
+  <div class="game-body">
+    
+    <div class="map-container">
+      <div class="map-tooltip" id="mapTooltip"></div>
+      <svg id="worldMap"></svg>
     </div>
-    <button class="btn-action" onclick="passerTour()">Passer le tour ➔</button>
+
+    <div class="side-panel">
+      <div class="panel-header">
+        <span class="flag-icon" id="nationFlag">🏳️</span>
+        <div class="nation-details">
+          <h2 id="nationName">Sélectionnez un pays</h2>
+          <p id="nationRegime">Régime Politique : Incertain</p>
+        </div>
+      </div>
+
+      <div class="panel-tabs">
+        <button class="tab-btn active">Aperçu</button>
+        <button class="tab-btn">Économie</button>
+        <button class="tab-btn">Armée</button>
+        <button class="tab-btn">Diplomatie</button>
+      </div>
+
+      <div class="panel-content">
+        <div class="stat-row">
+          <span class="stat-label">Population</span>
+          <span class="stat-value" id="statPop">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Stabilité</span>
+          <span class="stat-value" id="statStability">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Usines / Industrie</span>
+          <span class="stat-value" id="statIndustry">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Division Militaire</span>
+          <span class="stat-value" id="statArmy">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-console">
+      <div class="console-header">
+        <span>🤖</span> Assistant Stratégique Pax IA
+      </div>
+      <div class="console-logs" id="consoleLogs">
+        <div class="log-entry"><span class="author">Système:</span> Partie initialisée. Sélectionnez un territoire pour débuter.</div>
+      </div>
+      <div class="console-input-box">
+        <input type="text" id="aiInput" placeholder="Saisir un ordre ou poser une question à l'IA..." onkeypress="if(event.key==='Enter') envoyerOrdreIA()">
+        <button onclick="envoyerOrdreIA()">Envoyer</button>
+      </div>
+    </div>
+
+    <div class="bottom-hud">
+      <div style="font-size: 0.85rem; color: #94a3b8;">
+        Tour actuel : <strong style="color:#f8fafc;" id="turnCounter">1</strong>
+      </div>
+      <button class="btn-next-turn" onclick="passerTour()">Fin du tour ➔</button>
+    </div>
+
   </div>
 
   <script>
@@ -236,10 +497,7 @@
     let selectedCountryElement = null;
 
     document.addEventListener("DOMContentLoaded", () => {
-      // 1. Initialiser les infos utilisateur (PAMP & Avatar)
       chargerInfosUtilisateur();
-
-      // 2. Générer et charger la carte du monde SVG
       initMap();
     });
 
@@ -268,25 +526,20 @@
       const svg = d3.select("#worldMap");
       const g = svg.append("g");
 
-      // Projection de Mercator modifiée
       const projection = d3.geoMercator()
         .scale(width / 6.5)
         .translate([width / 2, height / 1.5]);
 
       const path = d3.geoPath().projection(projection);
 
-      // Système de Zoom et Pan (Glisser-déposer)
       const zoom = d3.zoom()
-        .scaleExtent([1, 8])
-        .on("zoom", (event) => {
-          g.attr("transform", event.transform);
-        });
+        .scaleExtent([1, 10])
+        .on("zoom", (event) => g.attr("transform", event.transform));
 
       svg.call(zoom);
 
       const tooltip = d3.select("#mapTooltip");
 
-      // Chargement du fichier TopoJSON officiel des frontières du monde
       d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(data => {
         const countries = topojson.feature(data, data.objects.countries).features;
 
@@ -314,206 +567,57 @@
             selectedCountryElement = this;
             d3.select(this).classed("selected", true);
 
-            document.getElementById("selectedCountryName").textContent = d.properties.name || "Territoire Inconnu";
-            document.getElementById("selectedCountryStatus").textContent = `Sélectionné · Prêt pour les ordres`;
+            mettreAJourPanneau(d.properties.name || "Nation Inconnue");
           });
       });
     }
 
+    function mettreAJourPanneau(nomNation) {
+      document.getElementById("nationName").textContent = nomNation;
+      document.getElementById("nationFlag").textContent = "🚩";
+      document.getElementById("nationRegime").textContent = "Régime : Démocratie / République";
+      document.getElementById("statPop").textContent = (Math.floor(Math.random() * 50) + 10) + " M";
+      document.getElementById("statStability").textContent = (Math.floor(Math.random() * 40) + 60) + "%";
+      document.getElementById("statIndustry").textContent = Math.floor(Math.random() * 120) + 20;
+      document.getElementById("statArmy").textContent = Math.floor(Math.random() * 40) + 5 + " Divisions";
+
+      ajouterLog("IA", `Analyse stratégique de : ${nomNation}`);
+    }
+
+    function envoyerOrdreIA() {
+      const input = document.getElementById("aiInput");
+      const texte = input.value.trim();
+      if (!texte) return;
+
+      ajouterLog("Joueur", texte);
+      input.value = "";
+
+      // Simulation de réponse IA
+      setTimeout(() => {
+        ajouterLog("IA", "Ordre pris en compte. Calcul des conséquences géopolitiques...");
+      }, 600);
+    }
+
+    function ajouterLog(auteur, message) {
+      const logs = document.getElementById("consoleLogs");
+      const div = document.createElement("div");
+      div.className = "log-entry";
+      div.innerHTML = `<span class="author">${auteur}:</span> ${message}`;
+      logs.appendChild(div);
+      logs.scrollTop = logs.scrollHeight;
+    }
+
     function passerTour() {
       currentTurn++;
-      document.getElementById("selectedCountryStatus").textContent = `Tour ${currentTurn} - Ordres exécutés`;
+      document.getElementById("turnCounter").textContent = currentTurn;
+      ajouterLog("Système", `Passage au Tour ${currentTurn}`);
+    }
+
+    function togglePause() {}
+    function setSpeed(vitesse) {
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
     }
   </script>
-</body>
-</html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia - Session</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
-        #map { position: absolute; top: 0; bottom: 60px; width: 100%; z-index: 1; }
-        #overlay-stats {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 20px; border-radius: 20px;
-            display: flex; gap: 15px; backdrop-filter: blur(4px);
-        }
-        #time-control {
-            position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 8px;
-            display: flex; flex-direction: column; gap: 5px; backdrop-filter: blur(4px);
-        }
-        #action-input-container {
-            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            width: 80%; max-width: 600px; display: none;
-        }
-        #action-input-container input {
-            width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #444;
-            background: rgba(20, 20, 20, 0.9); color: white; outline: none;
-        }
-        .navbar {
-            position: absolute; bottom: 0; width: 100%; height: 60px; background: #1a1a1a;
-            display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333;
-        }
-        .nav-btn {
-            background: none; border: none; color: #888; font-size: 24px; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .nav-btn span { font-size: 10px; text-transform: uppercase; margin-top: 2px; }
-        .country-label {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            color: rgba(255, 255, 255, 0.7) !important;
-            font-weight: bold;
-            font-size: 10px;
-            text-shadow: 1px 1px 2px #000;
-            pointer-events: none;
-        }
-    </style>
-</head>
-<body>
-    <div id="overlay-stats">
-        <span id="country-display" style="border-right: 1px solid #555; padding-right: 15px; font-weight: bold; color: #ffcc00;"></span>
-        <span>📅 <span id="date-display"></span></span>
-        <span>⚖️ <span id="stability">70</span>%</span>
-        <span>💰 <span id="gold">500</span></span>
-    </div>
-
-    <div id="time-control">
-        <select id="time-step" style="background: #222; color: white; border: 1px solid #444;">
-            <option value="7">1 Semaine</option>
-            <option value="30">1 Mois</option>
-            <option value="365" selected>1 An</option>
-            <option value="custom">Custom...</option>
-        </select>
-        <button onclick="advanceTime()" style="background: #4a3b2b; color: white; border: none; padding: 5px; cursor: pointer;">Procéder</button>
-    </div>
-
-    <div id="action-input-container">
-        <input type="text" id="ai-command" placeholder="Donnez un ordre à votre empire..." onkeypress="if(event.key === 'Enter') sendCommand()">
-    </div>
-
-    <div id="map"></div>
-    <nav class="navbar">
-        <button class="nav-btn" onclick="playAction()">⚡<span>Action</span></button>
-        <button class="nav-btn" onclick="askGemini()">❓<span>IA</span></button>
-        <button class="nav-btn" onclick="location.href='index.html'">🏠<span>Menu</span></button>
-    </nav>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const period = urlParams.get('period') || 'rome';
-        const country = urlParams.get('country') || 'Inconnu';
-        let currentDate = new Date(parseInt(urlParams.get('year')) || 1000, 0, 1);
-
-        const configs = {
-            'rome': { center: [41.9, 12.5], zoom: 4 },
-            'medieval': { center: [48.8, 2.3], zoom: 4 },
-            'renaissance': { center: [43.7, 11.2], zoom: 5 },
-            'revolution': { center: [48.8, 2.3], zoom: 5 },
-            'ww1': { center: [50.0, 10.0], zoom: 4 },
-            'coldwar': { center: [52.5, 13.4], zoom: 3 }
-        };
-
-        const config = configs[period];
-        document.getElementById('country-display').innerText = country.toUpperCase();
-        
-        function updateDateDisplay() {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('date-display').innerText = currentDate.toLocaleDateString('fr-FR', options);
-        }
-        updateDateDisplay();
-
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(config.center, config.zoom);
-        // Fond de carte sombre pour faire ressortir les couleurs des pays
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
-
-        // Couleurs de drapeaux étendues
-        const flagColors = {
-            'FRA': '#002395', 'USA': '#B22234', 'CHN': '#DE2910', 'RUS': '#0039A6',
-            'GBR': '#012169', 'DEU': '#000000', 'ITA': '#008C45', 'ESP': '#AA151B',
-            'JPN': '#BC002D', 'BRA': '#009739', 'CAN': '#FF0000', 'IND': '#FF9933',
-            'AUS': '#00008B', 'MEX': '#006847', 'EGY': '#C09304', 'GRC': '#0D5EAF'
-        };
-
-        fetch('https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson')
-            .then(res => res.json())
-            .then(data => {
-                L.geoJson(data, {
-                    style: function(feature) {
-                        const code = feature.properties.ISO_A3;
-                        const color = flagColors[code] || '#444';
-                        return {
-                            fillColor: color,
-                            weight: 1,
-                            opacity: 1,
-                            color: 'rgba(255,255,255,0.3)',
-                            fillOpacity: 0.5
-                        };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        const name = feature.properties.ADMIN;
-                        
-                        // Ajouter le nom du pays en étiquette permanente
-                        layer.bindTooltip(name, {
-                            permanent: true,
-                            direction: 'center',
-                            className: 'country-label'
-                        }).openTooltip();
-
-                        layer.on('click', function(e) {
-                            L.popup()
-                                .setLatLng(e.latlng)
-                                .setContent(`
-                                    <div style="color:black; padding:10px;">
-                                        <h3 style="margin:0">${name}</h3>
-                                        <hr>
-                                        <p><b>Régime:</b> Souverain</p>
-                                        <p><b>Statut:</b> Stable</p>
-                                        <button onclick="alert('Diplomatie avec ${name}')">Diplomatie</button>
-                                    </div>
-                                `)
-                                .openOn(map);
-                        });
-                    }
-                }).addTo(map);
-            });
-
-        async function askGemini() {
-            alert("L'IA Gemini analyse l'état du monde à la date du " + currentDate.toLocaleDateString());
-        }
-
-        function playAction() {
-            const container = document.getElementById('action-input-container');
-            container.style.display = container.style.display === 'block' ? 'none' : 'block';
-            if(container.style.display === 'block') document.getElementById('ai-command').focus();
-        }
-
-        function sendCommand() {
-            const cmd = document.getElementById('ai-command').value;
-            if(!cmd) return;
-            alert("Ordre envoyé : " + cmd + ". Avancez le temps pour voir les conséquences.");
-            document.getElementById('ai-command').value = "";
-            document.getElementById('action-input-container').style.display = 'none';
-        }
-
-        function advanceTime() {
-            let step = document.getElementById('time-step').value;
-            let days = 0;
-            if (step === 'custom') {
-                days = parseInt(prompt("Nombre de jours à avancer :", "100")) || 0;
-            } else {
-                days = parseInt(step);
-            }
-            currentDate.setDate(currentDate.getDate() + days);
-            updateDateDisplay();
-            // Ici, on pourrait déclencher l'IA pour traiter les commandes en attente
-        }
-    </script>
 </body>
 </html>
