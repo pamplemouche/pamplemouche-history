@@ -3,12 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pamplemouche History - Play</title>
+
+<title>Pamplemouche History</title>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
 <style>
+
+/* =========================================================
+   BASE
+========================================================= */
+
 * {
     box-sizing: border-box;
 }
@@ -19,24 +25,35 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-family: Arial, Helvetica, sans-serif;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     background: #080b10;
     color: #e8edf5;
 }
 
 #game {
     position: relative;
-    width: 100%;
-    height: 100%;
+
+    width: 100vw;
+    height: 100vh;
+
+    overflow: hidden;
 }
 
-/* =========================
+
+/* =========================================================
    CARTE
-========================= */
+========================================================= */
 
 #map {
     position: absolute;
+
     inset: 0;
+
     background: #080b10;
 }
 
@@ -45,45 +62,97 @@ body {
     height: 100%;
 }
 
+
+/* Pays */
+
 .country {
-    fill: #202833;
-    stroke: #394452;
-    stroke-width: 0.6;
-    transition: fill 0.15s ease;
+    stroke: #161c25;
+    stroke-width: 0.65px;
+
+    transition:
+        filter 0.12s ease,
+        stroke-width 0.12s ease;
 }
 
 .country:hover {
-    fill: #344152;
+    filter: brightness(1.25);
+
     cursor: pointer;
+
+    stroke: #ffffff;
+    stroke-width: 1px;
 }
 
 .country.selected {
-    fill: #536b91;
-    stroke: #a9c4ef;
-    stroke-width: 1.2;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+
+    filter: brightness(1.2);
 }
 
-/* =========================
-   BOUTONS PRINCIPAUX
-========================= */
+
+/* Noms des pays */
+
+.country-label {
+    pointer-events: none;
+
+    fill: #ffffff;
+
+    font-size: 8px;
+
+    font-weight: 600;
+
+    text-anchor: middle;
+
+    paint-order: stroke;
+
+    stroke: rgba(0, 0, 0, 0.75);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+
+    user-select: none;
+}
+
+
+/*
+   Les très petits pays ont besoin d'un texte plus petit.
+*/
+
+.country-label.small {
+    font-size: 6px;
+}
+
+
+/* =========================================================
+   BOUTONS
+========================================================= */
 
 #bottomControls {
+
     position: absolute;
+
     left: 18px;
     bottom: 18px;
 
     display: flex;
+
     gap: 8px;
 
     z-index: 20;
 }
 
+
 .controlButton {
+
     border: 1px solid #394452;
-    background: rgba(15, 19, 26, 0.92);
+
+    background:
+        rgba(15, 19, 26, 0.92);
+
     color: #e8edf5;
 
     padding: 10px 14px;
+
     border-radius: 9px;
 
     font-size: 14px;
@@ -97,42 +166,61 @@ body {
         border-color 0.15s ease;
 }
 
+
 .controlButton:hover {
-    background: rgba(30, 38, 50, 0.96);
+
+    background:
+        rgba(30, 38, 50, 0.96);
+
     border-color: #59677a;
 }
 
-/* =========================
+
+/* =========================================================
    TEMPS
-========================= */
+========================================================= */
 
 #timeContainer {
+
     position: absolute;
+
     top: 18px;
     right: 18px;
 
     z-index: 30;
 }
 
+
 #timeButton {
+
     border: 1px solid #394452;
-    background: rgba(15, 19, 26, 0.92);
+
+    background:
+        rgba(15, 19, 26, 0.92);
+
     color: #e8edf5;
 
     padding: 10px 14px;
+
     border-radius: 9px;
 
     cursor: pointer;
+
     font-size: 14px;
 
     backdrop-filter: blur(10px);
 }
 
+
 #timeButton:hover {
-    background: rgba(30, 38, 50, 0.96);
+
+    background:
+        rgba(30, 38, 50, 0.96);
 }
 
+
 #timeMenu {
+
     position: absolute;
 
     top: calc(100% + 7px);
@@ -143,23 +231,30 @@ body {
     padding: 6px;
 
     border: 1px solid #394452;
+
     border-radius: 9px;
 
-    background: rgba(13, 17, 23, 0.98);
+    background:
+        rgba(13, 17, 23, 0.98);
 
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.45);
 
     display: none;
 }
+
 
 #timeMenu.open {
     display: block;
 }
 
+
 .timeOption {
+
     width: 100%;
 
     border: none;
+
     background: transparent;
 
     color: #dce3ed;
@@ -175,38 +270,53 @@ body {
     font-size: 13px;
 }
 
+
 .timeOption:hover {
+
     background: #202936;
 }
 
+
 .timeSeparator {
+
     height: 1px;
+
     background: #2c3542;
+
     margin: 5px 0;
 }
 
-/* =========================
-   MINI FENÊTRE IA
-========================= */
+
+/* =========================================================
+   PANNEAU IA
+========================================================= */
 
 #aiPanel {
+
     position: absolute;
 
     left: 18px;
     top: 18px;
 
-    width: min(390px, calc(100vw - 36px));
-    height: min(500px, calc(100vh - 36px));
+    width:
+        min(390px, calc(100vw - 36px));
+
+    height:
+        min(500px, calc(100vh - 36px));
 
     display: none;
+
     flex-direction: column;
 
-    background: rgba(12, 16, 22, 0.97);
+    background:
+        rgba(12, 16, 22, 0.97);
 
     border: 1px solid #394452;
+
     border-radius: 11px;
 
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.55);
 
     backdrop-filter: blur(14px);
 
@@ -215,35 +325,47 @@ body {
     overflow: hidden;
 }
 
+
 #aiPanel.open {
     display: flex;
 }
 
-/* HEADER */
+
+/* Header */
 
 #aiHeader {
+
     height: 43px;
 
     flex-shrink: 0;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
     padding: 0 12px;
 
     background: #151b24;
 
-    border-bottom: 1px solid #2b3441;
+    border-bottom:
+        1px solid #2b3441;
 }
 
+
 #aiTitle {
+
     font-size: 13px;
+
     font-weight: 600;
 }
 
+
 #closeAi {
+
     border: none;
+
     background: transparent;
 
     color: #8e9bab;
@@ -255,13 +377,18 @@ body {
     line-height: 1;
 }
 
+
 #closeAi:hover {
     color: white;
 }
 
-/* MESSAGES */
+
+/* =========================================================
+   MESSAGES
+========================================================= */
 
 #messages {
+
     flex: 1;
 
     overflow-y: auto;
@@ -269,7 +396,9 @@ body {
     padding: 12px;
 }
 
+
 .message {
+
     max-width: 88%;
 
     padding: 8px 10px;
@@ -279,33 +408,48 @@ body {
     border-radius: 8px;
 
     font-size: 13px;
+
     line-height: 1.45;
 
     white-space: pre-wrap;
 }
 
+
 .message.ai {
+
     background: #1b2430;
+
     color: #dce6f3;
 }
 
+
 .message.user {
+
     margin-left: auto;
 
     background: #31598c;
+
     color: white;
 }
 
-/* =========================
+
+/* =========================================================
    ACTIONS
-========================= */
+========================================================= */
 
 #actionsList {
+
     display: none;
+
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 12px;
 }
 
+
 .actionItem {
-    position: relative;
 
     padding: 10px;
 
@@ -320,12 +464,17 @@ body {
     font-size: 13px;
 }
 
+
 .actionNumber {
+
     color: #91a8c7;
+
     margin-right: 5px;
 }
 
+
 .actionPending {
+
     display: block;
 
     margin-top: 5px;
@@ -335,7 +484,9 @@ body {
     font-size: 11px;
 }
 
+
 .emptyActions {
+
     color: #687687;
 
     font-size: 13px;
@@ -345,11 +496,13 @@ body {
     padding: 5px;
 }
 
-/* =========================
+
+/* =========================================================
    INPUT
-========================= */
+========================================================= */
 
 #inputArea {
+
     display: flex;
 
     gap: 7px;
@@ -358,10 +511,13 @@ body {
 
     background: #10151d;
 
-    border-top: 1px solid #2b3441;
+    border-top:
+        1px solid #2b3441;
 }
 
+
 #messageInput {
+
     flex: 1;
 
     min-width: 0;
@@ -383,11 +539,15 @@ body {
     font-size: 13px;
 }
 
+
 #messageInput:focus {
+
     border-color: #536b91;
 }
 
+
 #sendButton {
+
     width: 40px;
 
     border: none;
@@ -403,15 +563,19 @@ body {
     font-size: 15px;
 }
 
+
 #sendButton:hover {
+
     background: #3c6ba5;
 }
 
-/* =========================
-   PAYS
-========================= */
+
+/* =========================================================
+   INFORMATIONS PAYS
+========================================================= */
 
 #countryPanel {
+
     position: absolute;
 
     right: 18px;
@@ -421,7 +585,8 @@ body {
 
     padding: 13px;
 
-    background: rgba(13, 18, 25, 0.92);
+    background:
+        rgba(13, 18, 25, 0.92);
 
     border: 1px solid #303b49;
 
@@ -434,29 +599,38 @@ body {
     backdrop-filter: blur(10px);
 }
 
+
 #countryPanel.visible {
     display: block;
 }
 
+
 #countryName {
+
     font-size: 15px;
+
     font-weight: 600;
 
     margin-bottom: 9px;
 }
 
+
 .countryInfo {
+
     font-size: 12px;
+
     color: #8795a7;
 
     margin-top: 5px;
 }
 
-/* =========================
+
+/* =========================================================
    CUSTOM TIME
-========================= */
+========================================================= */
 
 #customOverlay {
+
     position: absolute;
 
     inset: 0;
@@ -464,19 +638,25 @@ body {
     display: none;
 
     align-items: center;
+
     justify-content: center;
 
-    background: rgba(0, 0, 0, 0.35);
+    background:
+        rgba(0, 0, 0, 0.35);
 
     z-index: 100;
 }
+
 
 #customOverlay.open {
     display: flex;
 }
 
+
 #customBox {
-    width: min(340px, calc(100vw - 36px));
+
+    width:
+        min(340px, calc(100vw - 36px));
 
     background: #121821;
 
@@ -486,23 +666,32 @@ body {
 
     padding: 16px;
 
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
+
 #customTitle {
+
     font-size: 14px;
+
     font-weight: 600;
 
     margin-bottom: 14px;
 }
 
+
 #customInputs {
+
     display: flex;
+
     gap: 8px;
 }
 
+
 #customAmount,
 #customUnit {
+
     flex: 1;
 
     min-width: 0;
@@ -520,7 +709,9 @@ body {
     outline: none;
 }
 
+
 #customButtons {
+
     display: flex;
 
     justify-content: flex-end;
@@ -530,7 +721,9 @@ body {
     margin-top: 14px;
 }
 
+
 .customButton {
+
     border: 1px solid #394452;
 
     background: #1a222d;
@@ -544,203 +737,283 @@ body {
     cursor: pointer;
 }
 
+
 .customButton.primary {
+
     background: #31598c;
+
     border-color: #31598c;
 }
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+#dateDisplay {
+
+    position: absolute;
+
+    top: 19px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    z-index: 20;
+
+    padding: 7px 11px;
+
+    border-radius: 7px;
+
+    background:
+        rgba(10, 14, 20, 0.72);
+
+    color: #b7c1cf;
+
+    font-size: 12px;
+
+    pointer-events: none;
+
+    backdrop-filter: blur(8px);
+}
+
 </style>
 </head>
+
 
 <body>
 
 <div id="game">
 
-    <!-- =====================
-         CARTE
-    ====================== -->
 
-    <div id="map">
-        <svg id="worldMap"></svg>
-    </div>
+<!-- ======================================================
+     CARTE
+====================================================== -->
+
+<div id="map">
+
+    <svg id="worldMap"></svg>
+
+</div>
 
 
-    <!-- =====================
-         TEMPS
-    ====================== -->
+<!-- ======================================================
+     DATE
+====================================================== -->
 
-    <div id="timeContainer">
+<div id="dateDisplay">
+    1 janvier 1936
+</div>
 
-        <button id="timeButton">
-            ⏱ Temps
+
+<!-- ======================================================
+     TEMPS
+====================================================== -->
+
+<div id="timeContainer">
+
+    <button id="timeButton">
+        ⏱ Temps
+    </button>
+
+
+    <div id="timeMenu">
+
+        <button
+            class="timeOption"
+            onclick="advanceTime(1, 'weeks')">
+
+            1 semaine
+
         </button>
 
-        <div id="timeMenu">
 
-            <button class="timeOption"
-                    onclick="advanceTime(7, 'days')">
-                1 semaine
-            </button>
+        <button
+            class="timeOption"
+            onclick="advanceTime(1, 'months')">
 
-            <button class="timeOption"
-                    onclick="advanceTime(1, 'months')">
-                1 mois
-            </button>
+            1 mois
 
-            <button class="timeOption"
-                    onclick="advanceTime(1, 'years')">
-                1 an
-            </button>
+        </button>
 
-            <div class="timeSeparator"></div>
 
-            <button class="timeOption"
-                    onclick="openCustomTime()">
-                Custom Time
-            </button>
+        <button
+            class="timeOption"
+            onclick="advanceTime(1, 'years')">
 
+            1 an
+
+        </button>
+
+
+        <div class="timeSeparator"></div>
+
+
+        <button
+            class="timeOption"
+            onclick="openCustomTime()">
+
+            Custom Time
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================
+     INFORMATIONS PAYS
+====================================================== -->
+
+<div id="countryPanel">
+
+    <div id="countryName">
+        Pays
+    </div>
+
+    <div class="countryInfo">
+        Cliquez sur un pays pour voir ses informations.
+    </div>
+
+</div>
+
+
+<!-- ======================================================
+     PANNEAU IA
+====================================================== -->
+
+<div id="aiPanel">
+
+    <div id="aiHeader">
+
+        <div id="aiTitle">
+            💬 Discussion
         </div>
+
+
+        <button id="closeAi">
+            ×
+        </button>
 
     </div>
 
 
-    <!-- =====================
-         INFORMATIONS PAYS
-    ====================== -->
+    <div id="messages"></div>
 
-    <div id="countryPanel">
 
-        <div id="countryName">
-            Pays
-        </div>
+    <div id="actionsList"></div>
 
-        <div class="countryInfo">
-            Cliquez sur un pays pour voir ses informations.
-        </div>
+
+    <div id="inputArea">
+
+        <input
+            id="messageInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Écrivez un message..."
+        >
+
+
+        <button id="sendButton">
+            ➤
+        </button>
 
     </div>
 
+</div>
 
-    <!-- =====================
-         PANNEAU IA
-    ====================== -->
 
-    <div id="aiPanel">
+<!-- ======================================================
+     BOUTONS
+====================================================== -->
 
-        <div id="aiHeader">
+<div id="bottomControls">
 
-            <div id="aiTitle">
-                💬 Discussion
-            </div>
+    <button
+        class="controlButton"
+        id="actionButton">
 
-            <button id="closeAi">
-                ×
-            </button>
+        ⚔ Action
 
+    </button>
+
+
+    <button
+        class="controlButton"
+        id="discussionButton">
+
+        💬 Discussion
+
+    </button>
+
+</div>
+
+
+<!-- ======================================================
+     CUSTOM TIME
+====================================================== -->
+
+<div id="customOverlay">
+
+    <div id="customBox">
+
+        <div id="customTitle">
+            ⏩ Temps personnalisé
         </div>
 
 
-        <div id="messages"></div>
-
-        <div id="actionsList"></div>
-
-
-        <div id="inputArea">
+        <div id="customInputs">
 
             <input
-                id="messageInput"
-                type="text"
-                autocomplete="off"
-                placeholder="Écrivez un message..."
+                id="customAmount"
+                type="number"
+                min="1"
+                value="3"
             >
 
-            <button id="sendButton">
-                ➤
-            </button>
+
+            <select id="customUnit">
+
+                <option value="days">
+                    jours
+                </option>
+
+                <option value="weeks">
+                    semaines
+                </option>
+
+                <option value="months">
+                    mois
+                </option>
+
+                <option value="years">
+                    années
+                </option>
+
+            </select>
 
         </div>
 
-    </div>
+
+        <div id="customButtons">
+
+            <button
+                class="customButton"
+                onclick="closeCustomTime()">
+
+                Annuler
+
+            </button>
 
 
-    <!-- =====================
-         BOUTONS BAS GAUCHE
-    ====================== -->
+            <button
+                class="customButton primary"
+                onclick="confirmCustomTime()">
 
-    <div id="bottomControls">
+                Continuer
 
-        <button
-            class="controlButton"
-            id="actionButton">
-            ⚔ Action
-        </button>
-
-        <button
-            class="controlButton"
-            id="discussionButton">
-            💬 Discussion
-        </button>
-
-    </div>
-
-
-    <!-- =====================
-         CUSTOM TIME
-    ====================== -->
-
-    <div id="customOverlay">
-
-        <div id="customBox">
-
-            <div id="customTitle">
-                ⏩ Temps personnalisé
-            </div>
-
-            <div id="customInputs">
-
-                <input
-                    id="customAmount"
-                    type="number"
-                    min="1"
-                    value="3"
-                >
-
-                <select id="customUnit">
-
-                    <option value="days">
-                        jours
-                    </option>
-
-                    <option value="weeks">
-                        semaines
-                    </option>
-
-                    <option value="months">
-                        mois
-                    </option>
-
-                    <option value="years">
-                        années
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div id="customButtons">
-
-                <button
-                    class="customButton"
-                    onclick="closeCustomTime()">
-                    Annuler
-                </button>
-
-                <button
-                    class="customButton primary"
-                    onclick="confirmCustomTime()">
-                    Continuer
-                </button>
-
-            </div>
+            </button>
 
         </div>
 
@@ -749,111 +1022,305 @@ body {
 </div>
 
 
+</div>
+
+
 <script>
 
-/* ============================================================
+/* =========================================================
    ÉTAT DU JEU
-============================================================ */
+========================================================= */
 
-let currentDate = new Date(1936, 0, 1);
+
+/*
+    Date actuelle de la partie.
+*/
+
+let currentDate =
+    new Date(1936, 0, 1);
+
+
+/*
+    Pays actuellement sélectionné.
+*/
 
 let selectedCountry = null;
 
-let panelMode = "discussion";
 
 /*
+    Élément SVG sélectionné.
+*/
+
+let selectedCountryElement = null;
+
+
+/*
+    Mode du panneau IA.
+
+    "discussion"
+    ou
+    "actions"
+*/
+
+let panelMode = "discussion";
+
+
+/*
+    Liste des actions en attente.
+
     IMPORTANT :
 
-    Les actions restent ici.
+    Rien n'est envoyé à l'IA ici.
 
-    Elles ne sont PAS envoyées à l'IA quand le joueur
-    les écrit.
-
-    Elles seront récupérées uniquement lors de
-    advanceTime().
+    Les actions sont seulement stockées.
 */
 
 let pendingActions = [];
 
 
-/* ============================================================
+/*
+    Groupe contenant les territoires
+    de la carte.
+*/
+
+let mapGroup;
+
+
+/*
+    Liste des territoires.
+
+    Chaque territoire possède :
+
+        id
+        name
+        owner
+        geometry
+*/
+
+let territories = [];
+
+
+/*
+    État politique du monde.
+
+    Pour le moment chaque territoire
+    appartient à lui-même.
+
+    Plus tard :
+
+        worldState.Belgium.owner = "France"
+
+    permettra à l'IA d'annexer
+    automatiquement la Belgique.
+*/
+
+let worldState = {};
+
+
+/*
+    Couleurs des pays.
+
+    Une couleur est attribuée à chaque
+    propriétaire.
+*/
+
+const countryColors = {};
+
+
+/* =========================================================
+   COULEURS
+========================================================= */
+
+const palette = [
+
+    "#c94c4c",
+    "#4c82c9",
+    "#55a86b",
+    "#c98a45",
+    "#8957b5",
+    "#45a6a0",
+    "#b85d8d",
+    "#7b9a45",
+    "#c26c35",
+    "#596fc1",
+    "#a65a5a",
+    "#5b9b83",
+    "#9b7a45",
+    "#725ca8",
+    "#4c8eaa",
+    "#ad5971",
+    "#6f9652",
+    "#b36c4a",
+    "#637db0",
+    "#96704d"
+
+];
+
+
+let colorIndex = 0;
+
+
+function getCountryColor(owner) {
+
+    /*
+        Si une couleur existe déjà,
+        on la conserve.
+
+        C'est important :
+
+        un pays garde toujours sa couleur,
+        même après plusieurs années.
+    */
+
+    if (countryColors[owner]) {
+
+        return countryColors[owner];
+
+    }
+
+
+    /*
+        Nouvelle couleur.
+    */
+
+    countryColors[owner] =
+        palette[
+            colorIndex %
+            palette.length
+        ];
+
+    colorIndex++;
+
+
+    return countryColors[owner];
+
+}
+
+
+/* =========================================================
    INITIALISATION
-============================================================ */
+========================================================= */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-    initializeMap();
+        initializeMap();
 
-    document
-        .getElementById("timeButton")
-        .addEventListener("click", toggleTimeMenu);
 
-    document
-        .getElementById("actionButton")
-        .addEventListener("click", openActions);
+        document
+            .getElementById("timeButton")
+            .addEventListener(
+                "click",
+                toggleTimeMenu
+            );
 
-    document
-        .getElementById("discussionButton")
-        .addEventListener("click", openDiscussion);
 
-    document
-        .getElementById("closeAi")
-        .addEventListener("click", closeAiPanel);
+        document
+            .getElementById("actionButton")
+            .addEventListener(
+                "click",
+                openActions
+            );
 
-    document
-        .getElementById("sendButton")
-        .addEventListener("click", sendMessage);
 
-    document
-        .getElementById("messageInput")
-        .addEventListener("keydown", event => {
+        document
+            .getElementById("discussionButton")
+            .addEventListener(
+                "click",
+                openDiscussion
+            );
 
-            if (event.key === "Enter") {
-                sendMessage();
+
+        document
+            .getElementById("closeAi")
+            .addEventListener(
+                "click",
+                closeAiPanel
+            );
+
+
+        document
+            .getElementById("sendButton")
+            .addEventListener(
+                "click",
+                sendMessage
+            );
+
+
+        document
+            .getElementById("messageInput")
+            .addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key === "Enter"
+                    ) {
+
+                        sendMessage();
+
+                    }
+
+                }
+            );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                const container =
+                    document.getElementById(
+                        "timeContainer"
+                    );
+
+
+                if (
+                    !container.contains(
+                        event.target
+                    )
+                ) {
+
+                    closeTimeMenu();
+
+                }
+
             }
+        );
 
-        });
-
-    document.addEventListener("click", event => {
-
-        const timeContainer =
-            document.getElementById("timeContainer");
-
-        if (!timeContainer.contains(event.target)) {
-
-            document
-                .getElementById("timeMenu")
-                .classList.remove("open");
-
-        }
-
-    });
-
-});
+    }
+);
 
 
-/* ============================================================
+/* =========================================================
    CARTE
-============================================================ */
+========================================================= */
 
 function initializeMap() {
 
     const svg =
         d3.select("#worldMap");
 
+
     const width =
         window.innerWidth;
+
 
     const height =
         window.innerHeight;
 
 
+    /*
+        Projection mondiale.
+    */
+
     const projection =
-        d3.geoMercator()
-          .scale(width / 6.4)
+        d3.geoNaturalEarth1()
+          .scale(width / 5.8)
           .translate([
               width / 2,
-              height / 1.55
+              height / 2
           ]);
 
 
@@ -862,130 +1329,410 @@ function initializeMap() {
           .projection(projection);
 
 
-    const mapGroup =
+    /*
+        Groupe principal.
+
+        Tout ce qui concerne la carte
+        sera dedans.
+    */
+
+    mapGroup =
         svg.append("g");
 
 
+    /*
+        Zoom.
+
+        La carte peut être déplacée
+        et zoomée.
+    */
+
     const zoom =
         d3.zoom()
-          .scaleExtent([1, 8])
-          .on("zoom", event => {
+          .scaleExtent([1, 10])
+          .on(
+              "zoom",
+              event => {
 
-              mapGroup.attr(
-                  "transform",
-                  event.transform
-              );
+                  mapGroup.attr(
+                      "transform",
+                      event.transform
+                  );
 
-          });
+              }
+          );
 
 
     svg.call(zoom);
 
+
+    /*
+        Récupération des frontières mondiales.
+    */
 
     d3.json(
         "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
     )
     .then(world => {
 
-        const countries =
+        const features =
             topojson.feature(
                 world,
                 world.objects.countries
             ).features;
 
 
+        /*
+            Création des territoires.
+        */
+
+        territories =
+            features.map(
+                (feature, index) => {
+
+                    /*
+                        Le fichier World Atlas
+                        contient un identifiant numérique.
+
+                        Les noms peuvent varier selon
+                        la version des données.
+
+                        On crée donc un nom de secours.
+                    */
+
+                    const name =
+                        feature.properties.name ||
+                        "Territoire " +
+                        feature.id;
+
+
+                    /*
+                        Chaque territoire commence
+                        indépendant de lui-même.
+
+                        C'est notre état politique
+                        initial.
+                    */
+
+                    worldState[name] = {
+
+                        owner: name,
+
+                        name: name,
+
+                        id: feature.id
+
+                    };
+
+
+                    return {
+
+                        id: feature.id,
+
+                        name: name,
+
+                        owner: name,
+
+                        geometry: feature
+
+                    };
+
+                }
+            );
+
+
+        /*
+            Dessin des pays.
+        */
+
         mapGroup
             .selectAll(".country")
-            .data(countries)
+            .data(territories)
             .enter()
             .append("path")
-            .attr("class", "country")
-            .attr("d", path)
 
-            .on("click", function(event, country) {
+            .attr(
+                "class",
+                "country"
+            )
 
-                d3.selectAll(".country")
-                    .classed("selected", false);
+            .attr(
+                "d",
+                d => path(d.geometry)
+            )
 
-                d3.select(this)
-                    .classed("selected", true);
+            .attr(
+                "fill",
+                d =>
+                    getCountryColor(
+                        d.owner
+                    )
+            )
+
+            .on(
+                "click",
+                function(event, d) {
+
+                    selectCountry(
+                        this,
+                        d
+                    );
+
+                }
+            );
 
 
-                selectedCountry =
-                    country.properties.name ||
-                    "Pays inconnu";
+        /*
+            Ajout des noms.
+
+            Le centroïde permet de placer
+            automatiquement le nom au milieu
+            du territoire.
+        */
+
+        mapGroup
+            .selectAll(".country-label")
+            .data(territories)
+            .enter()
+            .append("text")
+
+            .attr(
+                "class",
+                d => {
+
+                    /*
+                        Petits territoires :
+                        texte légèrement plus petit.
+                    */
+
+                    const bounds =
+                        path.bounds(
+                            d.geometry
+                        );
 
 
-                showCountry(selectedCountry);
+                    const width =
+                        bounds[1][0] -
+                        bounds[0][0];
 
-            });
+
+                    if (width < 25) {
+
+                        return "country-label small";
+
+                    }
+
+
+                    return "country-label";
+
+                }
+            )
+
+            .attr(
+                "x",
+                d =>
+                    path.centroid(
+                        d.geometry
+                    )[0]
+            )
+
+            .attr(
+                "y",
+                d =>
+                    path.centroid(
+                        d.geometry
+                    )[1]
+            )
+
+            .text(
+                d => d.name
+            );
 
     });
 
 }
 
 
-/* ============================================================
-   PAYS
-============================================================ */
+/* =========================================================
+   SÉLECTION D'UN PAYS
+========================================================= */
 
-function showCountry(name) {
+function selectCountry(
+    element,
+    territory
+) {
 
-    const panel =
-        document.getElementById("countryPanel");
+    /*
+        Retire la sélection précédente.
+    */
 
-    document
-        .getElementById("countryName")
-        .textContent = name;
+    if (
+        selectedCountryElement
+    ) {
+
+        d3.select(
+            selectedCountryElement
+        )
+        .classed(
+            "selected",
+            false
+        );
+
+    }
 
 
-    panel.classList.add("visible");
+    /*
+        Nouvelle sélection.
+    */
+
+    selectedCountryElement =
+        element;
+
+
+    d3.select(element)
+        .classed(
+            "selected",
+            true
+        );
+
+
+    selectedCountry =
+        territory.name;
+
+
+    showCountry(
+        territory.name,
+        territory.owner
+    );
 
 }
 
 
-/* ============================================================
-   PANNEAU IA
-============================================================ */
+/* =========================================================
+   INFORMATIONS PAYS
+========================================================= */
 
-function openAiPanel(mode) {
-
-    panelMode = mode;
+function showCountry(
+    name,
+    owner
+) {
 
     const panel =
-        document.getElementById("aiPanel");
+        document.getElementById(
+            "countryPanel"
+        );
+
+
+    document
+        .getElementById(
+            "countryName"
+        )
+        .textContent =
+            name;
+
+
+    const info =
+        panel.querySelector(
+            ".countryInfo"
+        );
+
+
+    if (
+        owner === name
+    ) {
+
+        info.textContent =
+            "Territoire contrôlé par " +
+            owner +
+            ".";
+
+    }
+
+    else {
+
+        info.textContent =
+            "Territoire contrôlé par " +
+            owner +
+            ".";
+
+    }
+
+
+    panel.classList.add(
+        "visible"
+    );
+
+}
+
+
+/* =========================================================
+   PANNEAU IA
+========================================================= */
+
+function openAiPanel(
+    mode
+) {
+
+    panelMode =
+        mode;
+
+
+    const panel =
+        document.getElementById(
+            "aiPanel"
+        );
+
 
     const title =
-        document.getElementById("aiTitle");
+        document.getElementById(
+            "aiTitle"
+        );
+
 
     const messages =
-        document.getElementById("messages");
+        document.getElementById(
+            "messages"
+        );
+
 
     const actions =
-        document.getElementById("actionsList");
+        document.getElementById(
+            "actionsList"
+        );
 
 
-    panel.classList.add("open");
+    panel.classList.add(
+        "open"
+    );
 
 
-    if (mode === "discussion") {
+    if (
+        mode === "discussion"
+    ) {
 
         title.textContent =
             "💬 Discussion";
 
+
         messages.style.display =
             "block";
+
 
         actions.style.display =
             "none";
 
+
         document
-            .getElementById("messageInput")
+            .getElementById(
+                "messageInput"
+            )
             .placeholder =
-            "Écrivez un message...";
+                "Écrivez un message...";
 
 
-        if (messages.children.length === 0) {
+        if (
+            messages.children.length === 0
+        ) {
 
             addAiMessage(
                 "Je suis prêt. Posez-moi une question sur votre pays ou sur la situation du monde."
@@ -1000,16 +1747,22 @@ function openAiPanel(mode) {
         title.textContent =
             "⚔ Actions";
 
+
         messages.style.display =
             "none";
+
 
         actions.style.display =
             "block";
 
+
         document
-            .getElementById("messageInput")
+            .getElementById(
+                "messageInput"
+            )
             .placeholder =
-            "Décrivez une action...";
+                "Décrivez une action...";
+
 
         renderActions();
 
@@ -1017,7 +1770,9 @@ function openAiPanel(mode) {
 
 
     document
-        .getElementById("messageInput")
+        .getElementById(
+            "messageInput"
+        )
         .focus();
 
 }
@@ -1025,14 +1780,18 @@ function openAiPanel(mode) {
 
 function openDiscussion() {
 
-    openAiPanel("discussion");
+    openAiPanel(
+        "discussion"
+    );
 
 }
 
 
 function openActions() {
 
-    openAiPanel("actions");
+    openAiPanel(
+        "actions"
+    );
 
 }
 
@@ -1040,27 +1799,36 @@ function openActions() {
 function closeAiPanel() {
 
     document
-        .getElementById("aiPanel")
-        .classList.remove("open");
+        .getElementById(
+            "aiPanel"
+        )
+        .classList.remove(
+            "open"
+        );
 
 }
 
 
-/* ============================================================
+/* =========================================================
    DISCUSSION
-============================================================ */
+========================================================= */
 
 function sendMessage() {
 
     const input =
-        document.getElementById("messageInput");
+        document.getElementById(
+            "messageInput"
+        );
+
 
     const text =
         input.value.trim();
 
 
     if (!text) {
+
         return;
+
     }
 
 
@@ -1068,19 +1836,25 @@ function sendMessage() {
 
 
     /*
-        MODE ACTION
+        ACTION
 
-        Aucun appel IA.
+        AUCUNE IA.
 
-        On ajoute simplement l'action
-        dans la liste.
+        On ajoute uniquement
+        l'ordre à la liste.
     */
 
-    if (panelMode === "actions") {
+    if (
+        panelMode === "actions"
+    ) {
 
-        pendingActions.push(text);
+        pendingActions.push(
+            text
+        );
+
 
         renderActions();
+
 
         return;
 
@@ -1088,20 +1862,21 @@ function sendMessage() {
 
 
     /*
-        MODE DISCUSSION
+        DISCUSSION
 
-        Ici, contrairement aux actions,
-        on pourra appeler l'IA immédiatement.
+        Ici l'IA pourra être appelée
+        immédiatement.
     */
 
-    addUserMessage(text);
+    addUserMessage(
+        text
+    );
 
 
     /*
-        TODO :
+        PLACEHOLDER IA.
 
-        Remplacer cette réponse temporaire
-        par l'appel réel à l'API IA.
+        À remplacer par la vraie API.
     */
 
     addAiMessage(
@@ -1111,21 +1886,35 @@ function sendMessage() {
 }
 
 
-function addUserMessage(text) {
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+function addUserMessage(
+    text
+) {
 
     const message =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     message.className =
         "message user";
+
 
     message.textContent =
         text;
 
 
     document
-        .getElementById("messages")
-        .appendChild(message);
+        .getElementById(
+            "messages"
+        )
+        .appendChild(
+            message
+        );
 
 
     scrollMessages();
@@ -1133,21 +1922,31 @@ function addUserMessage(text) {
 }
 
 
-function addAiMessage(text) {
+function addAiMessage(
+    text
+) {
 
     const message =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     message.className =
         "message ai";
+
 
     message.textContent =
         text;
 
 
     document
-        .getElementById("messages")
-        .appendChild(message);
+        .getElementById(
+            "messages"
+        )
+        .appendChild(
+            message
+        );
 
 
     scrollMessages();
@@ -1158,7 +1957,10 @@ function addAiMessage(text) {
 function scrollMessages() {
 
     const messages =
-        document.getElementById("messages");
+        document.getElementById(
+            "messages"
+        );
+
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -1166,30 +1968,47 @@ function scrollMessages() {
 }
 
 
-/* ============================================================
+/* =========================================================
    ACTIONS
-============================================================ */
+========================================================= */
 
 function renderActions() {
 
     const container =
-        document.getElementById("actionsList");
+        document.getElementById(
+            "actionsList"
+        );
 
 
     container.innerHTML = "";
 
 
-    if (pendingActions.length === 0) {
+    if (
+        pendingActions.length === 0
+    ) {
 
         container.innerHTML = `
+
             <div class="emptyActions">
-                Aucune action en attente.<br><br>
+
+                Aucune action en attente.
+
+                <br>
+                <br>
+
                 Écrivez une action ci-dessous.
-                Elle sera enregistrée mais ne sera
-                pas envoyée à l'IA avant que vous
-                avanciez le temps.
+
+                <br>
+                <br>
+
+                Elle sera enregistrée ici,
+                mais ne sera envoyée à l'IA
+                qu'au prochain passage du temps.
+
             </div>
+
         `;
+
 
         return;
 
@@ -1200,26 +2019,37 @@ function renderActions() {
         (action, index) => {
 
             const item =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
+
 
             item.className =
                 "actionItem";
 
 
             item.innerHTML = `
+
                 <span class="actionNumber">
+
                     ${index + 1}.
+
                 </span>
 
                 ${escapeHtml(action)}
 
                 <span class="actionPending">
+
                     ⏳ En attente
+
                 </span>
+
             `;
 
 
-            container.appendChild(item);
+            container.appendChild(
+                item
+            );
 
         }
     );
@@ -1227,55 +2057,82 @@ function renderActions() {
 }
 
 
-/* ============================================================
+/* =========================================================
    TEMPS
-============================================================ */
+========================================================= */
 
 function toggleTimeMenu() {
 
     document
-        .getElementById("timeMenu")
-        .classList.toggle("open");
+        .getElementById(
+            "timeMenu"
+        )
+        .classList.toggle(
+            "open"
+        );
+
+}
+
+
+function closeTimeMenu() {
+
+    document
+        .getElementById(
+            "timeMenu"
+        )
+        .classList.remove(
+            "open"
+        );
 
 }
 
 
 /*
-    C'est LA fonction importante.
+    C'EST LE POINT DE DÉCLENCHEMENT
+    DE LA FUTURE SIMULATION IA.
 
-    Une action écrite précédemment n'appelle jamais
-    l'IA.
-
-    Quand le joueur choisit une durée :
-
-        1. on récupère les actions
-        2. on récupère l'état du monde
-        3. on demande à l'IA de simuler
-        4. l'IA simule la durée entière
-        5. les actions du joueur sont prises en compte
-        6. le monde évolue normalement autour
-        7. on reçoit le nouvel état
+    Les actions sont récupérées ici,
+    et PAS avant.
 */
 
-function advanceTime(amount, unit) {
+function advanceTime(
+    amount,
+    unit
+) {
 
     closeTimeMenu();
 
 
+    /*
+        Copie des actions.
+
+        On ne modifie pas encore
+        directement la liste.
+    */
+
     const actionsToSimulate =
-        [...pendingActions];
-
-
-    const oldDate =
-        new Date(currentDate);
+        [
+            ...pendingActions
+        ];
 
 
     /*
-        Pour l'instant, on avance réellement
-        la date localement.
+        Date avant simulation.
+    */
 
-        Plus tard, cette date viendra du
-        résultat de la simulation IA.
+    const oldDate =
+        new Date(
+            currentDate
+        );
+
+
+    /*
+        Pour le prototype,
+        nous avançons localement
+        la date.
+
+        Plus tard cette date sera
+        fournie par le résultat de l'IA.
     */
 
     applyTimeToDate(
@@ -1285,20 +2142,14 @@ function advanceTime(amount, unit) {
     );
 
 
+    updateDateDisplay();
+
+
     /*
-        Les actions sont maintenant consommées.
-
-        IMPORTANT :
-
-        Elles n'étaient pas envoyées lors de leur
-        création.
-
-        Elles sont envoyées maintenant, avec
-        la durée demandée.
+        Construction de la requête
+        que nous enverrons plus tard
+        à l'IA.
     */
-
-    pendingActions = [];
-
 
     const simulationRequest = {
 
@@ -1309,70 +2160,143 @@ function advanceTime(amount, unit) {
             currentDate.toISOString(),
 
         duration: {
-            amount,
-            unit
+
+            amount:
+                amount,
+
+            unit:
+                unit
+
         },
 
-        country:
+
+        playerCountry:
             selectedCountry,
 
-        actions:
-            actionsToSimulate
+
+        pendingActions:
+            actionsToSimulate,
+
+
+        worldState:
+            worldState
 
     };
 
 
     console.log(
-        "SIMULATION IA :",
+        "================================"
+    );
+
+
+    console.log(
+        "SIMULATION IA"
+    );
+
+
+    console.log(
         simulationRequest
     );
 
 
+    console.log(
+        "================================"
+    );
+
+
     /*
-        TODO :
+        Les actions ont maintenant
+        été consommées.
 
-        C'est ici qu'on branchera l'IA.
-
-        Exemple conceptuel :
-
-        await simulateWorld(simulationRequest);
-
-        L'IA devra simuler :
-
-        - les actions du joueur
-        - les conséquences de ces actions
-        - les événements normaux
-        - les autres pays
-        - l'économie
-        - la diplomatie
-        - etc.
-
-        sur toute la durée demandée.
+        Dans la vraie version,
+        on attendra d'abord le résultat
+        de l'IA avant de les retirer.
     */
 
+    pendingActions = [];
+
+
+    /*
+        Prototype visuel.
+    */
 
     openActions();
 
-    const actionsMessage =
-        actionsToSimulate.length
-            ? actionsToSimulate.length +
-              " action(s) ont été intégrées à la simulation."
-            : "Aucune action n'était en attente.";
+
+    const resultText =
+        actionsToSimulate.length > 0
+
+            ?
+
+            "⏩ Temps avancé.\n\n" +
+
+            actionsToSimulate.length +
+            " action(s) sont prêtes à être simulées par l'IA."
+
+            :
+
+            "⏩ Temps avancé.\n\n" +
+
+            "Aucune action n'était en attente.";
 
 
-    document.getElementById("actionsList").innerHTML = `
-        <div class="emptyActions">
-            ⏩ Temps avancé.<br><br>
-            ${actionsMessage}
-            <br><br>
-            <span style="color:#536b91">
-                La simulation IA sera branchée ici.
-            </span>
-        </div>
-    `;
+    document
+        .getElementById(
+            "actionsList"
+        )
+        .innerHTML = `
+
+            <div class="emptyActions">
+
+                ${escapeHtml(
+                    resultText
+                )}
+
+                <br>
+                <br>
+
+                <span style="
+                    color:#536b91;
+                ">
+
+                    Simulation IA à connecter.
+
+                </span>
+
+            </div>
+
+        `;
+
+
+    /*
+        IMPORTANT POUR LA SUITE :
+
+        L'IA devra recevoir :
+
+        - l'état précédent
+        - la date de départ
+        - la durée
+        - les actions du joueur
+
+        ET SIMULER AUSSI :
+
+        - les événements normaux
+        - les autres pays
+        - l'économie
+        - les guerres
+        - la diplomatie
+        - les changements politiques
+        - les conséquences des actions
+
+        pendant toute la durée.
+    */
 
 }
 
+
+/* =========================================================
+   DATE
+========================================================= */
 
 function applyTimeToDate(
     date,
@@ -1380,34 +2304,49 @@ function applyTimeToDate(
     unit
 ) {
 
-    if (unit === "days") {
+    if (
+        unit === "days"
+    ) {
 
         date.setDate(
-            date.getDate() + amount
+            date.getDate() +
+            amount
         );
 
     }
 
-    else if (unit === "weeks") {
+
+    else if (
+        unit === "weeks"
+    ) {
 
         date.setDate(
-            date.getDate() + amount * 7
+            date.getDate() +
+            amount * 7
         );
 
     }
 
-    else if (unit === "months") {
+
+    else if (
+        unit === "months"
+    ) {
 
         date.setMonth(
-            date.getMonth() + amount
+            date.getMonth() +
+            amount
         );
 
     }
 
-    else if (unit === "years") {
+
+    else if (
+        unit === "years"
+    ) {
 
         date.setFullYear(
-            date.getFullYear() + amount
+            date.getFullYear() +
+            amount
         );
 
     }
@@ -1415,17 +2354,43 @@ function applyTimeToDate(
 }
 
 
-/* ============================================================
+function updateDateDisplay() {
+
+    const display =
+        document.getElementById(
+            "dateDisplay"
+        );
+
+
+    display.textContent =
+        currentDate.toLocaleDateString(
+            "fr-FR",
+            {
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            }
+        );
+
+}
+
+
+/* =========================================================
    CUSTOM TIME
-============================================================ */
+========================================================= */
 
 function openCustomTime() {
 
     closeTimeMenu();
 
+
     document
-        .getElementById("customOverlay")
-        .classList.add("open");
+        .getElementById(
+            "customOverlay"
+        )
+        .classList.add(
+            "open"
+        );
 
 }
 
@@ -1433,8 +2398,12 @@ function openCustomTime() {
 function closeCustomTime() {
 
     document
-        .getElementById("customOverlay")
-        .classList.remove("open");
+        .getElementById(
+            "customOverlay"
+        )
+        .classList.remove(
+            "open"
+        );
 
 }
 
@@ -1443,17 +2412,30 @@ function confirmCustomTime() {
 
     const amount =
         parseInt(
-            document.getElementById("customAmount").value,
+            document
+                .getElementById(
+                    "customAmount"
+                )
+                .value,
             10
         );
 
 
     const unit =
-        document.getElementById("customUnit").value;
+        document
+            .getElementById(
+                "customUnit"
+            )
+            .value;
 
 
-    if (!amount || amount < 1) {
+    if (
+        !amount ||
+        amount < 1
+    ) {
+
         return;
+
     }
 
 
@@ -1468,30 +2450,159 @@ function confirmCustomTime() {
 }
 
 
-/* ============================================================
+/* =========================================================
    UTILITAIRE
-============================================================ */
+========================================================= */
 
-function closeTimeMenu() {
-
-    document
-        .getElementById("timeMenu")
-        .classList.remove("open");
-
-}
-
-
-function escapeHtml(text) {
+function escapeHtml(
+    text
+) {
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     element.textContent =
         text;
 
+
     return element.innerHTML;
 
 }
+
+
+/* =========================================================
+   ANNEXION — PRÉPARATION
+========================================================= */
+
+
+/*
+    Cette fonction n'est pas encore appelée
+    par l'interface.
+
+    Elle montre cependant comment le système
+    d'annexion fonctionnera.
+
+    Exemple :
+
+        annexTerritory(
+            "Belgium",
+            "France"
+        );
+
+    donnera :
+
+        Belgique.owner = France
+
+    et la Belgique prendra automatiquement
+    la couleur française.
+*/
+
+
+function annexTerritory(
+    territoryName,
+    newOwner
+) {
+
+    const territory =
+        territories.find(
+            t =>
+                t.name ===
+                territoryName
+        );
+
+
+    if (!territory) {
+
+        console.warn(
+            "Territoire introuvable :",
+            territoryName
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Modification politique.
+    */
+
+    territory.owner =
+        newOwner;
+
+
+    worldState[
+        territoryName
+    ].owner =
+        newOwner;
+
+
+    /*
+        Mise à jour de la couleur.
+    */
+
+    mapGroup
+        .selectAll(".country")
+        .filter(
+            d =>
+                d.name ===
+                territoryName
+        )
+        .attr(
+            "fill",
+            d =>
+                getCountryColor(
+                    d.owner
+                )
+        );
+
+
+    /*
+        Mise à jour du nom.
+
+        Pour l'instant le nom géographique
+        reste affiché.
+
+        Plus tard on pourra afficher le nom
+        du pays propriétaire ou fusionner
+        réellement les frontières.
+    */
+
+    console.log(
+        territoryName +
+        " est maintenant contrôlé par " +
+        newOwner
+    );
+
+}
+
+
+/* =========================================================
+   EXEMPLE DE SIMULATION FUTURE
+========================================================= */
+
+
+/*
+    Exemple :
+
+        annexTerritory(
+            "Belgium",
+            "France"
+        );
+
+    ou encore :
+
+        annexTerritory(
+            "Austria",
+            "Germany"
+        );
+
+    L'IA pourra générer ces modifications
+    dans sa réponse de simulation.
+*/
 
 </script>
 
