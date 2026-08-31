@@ -684,24 +684,19 @@ select {
 
 
 .country-label {
-
+    font-size: 9px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: middle;
     pointer-events: none;
-
     fill: white;
 
-    text-anchor: middle;
-
-    font-size: 8px;
-
-    font-weight: 600;
-
     paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.75);
+    stroke-width: 3px;
+    stroke-linejoin: round;
 
-    stroke:
-        rgba(0,0,0,.75);
-
-    stroke-width: 2.5px;
-
+    white-space: nowrap;
 }
 
 
