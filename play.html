@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+<title>History</title>
+
+<link
+    rel="stylesheet"
+    href="/css/pamplemouche.css">
+
+</head>
+
+
+<body class="gameBody">
+
+
+<div id="game">
+
+
+    <!-- =================================================
+         CARTE
+    ================================================== -->
+
+    <div id="map">
+
+        <svg id="worldMap"></svg>
+
+    </div>
+
+
+    <!-- =================================================
+         DATE
+    ================================================== -->
+
+    <div id="dateDisplay">
+
+        1 janvier 1936
+
+    </div>
+
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <header class="gameHeader">
+
+        <a
+            href="/games.html"
+            class="gameBrand">
+
+            PAMPLEMOUCHE HISTORY
+
+        </a>
+
+
+        <div id="gameAccount"></div>
+
+    </header>
+
+
+    <!-- =================================================
+         PANNEAU IA
+    ================================================== -->
+
+    <div id="aiPanel">
+
+        <div id="aiHeader">
+
+            <div id="aiTitle">
+                Discussion
+            </div>
+
+            <button id="closeAi">
+                ×
+            </button>
+
+        </div>
+
+
+        <div id="messages"></div>
+
+
+        <div id="actionsList"></div>
+
+
+        <div id="inputArea">
+
+            <input
+                id="messageInput"
+                type="text"
+                autocomplete="off"
+                placeholder="Écrivez un message...">
+
+            <button id="sendButton">
+                ↑
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         INFOS PAYS
+    ================================================== -->
+
+    <div id="countryPanel">
+
+        <div id="countryName">
+            Pays
+        </div>
+
+        <div
+            id="countryInfo"
+            class="countryInfo">
+
+            Cliquez sur un pays.
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         TEMPS
+    ================================================== -->
+
+    <div id="timeContainer">
+
+        <button id="timeButton">
+
+            ⏱ Temps
+
+        </button>
+
+
+        <div id="timeMenu">
+
+            <button
+                class="timeOption"
+                data-amount="1"
+                data-unit="weeks">
+
+                1 semaine
+
+            </button>
+
+
+            <button
+                class="timeOption"
+                data-amount="1"
+                data-unit="months">
+
+                1 mois
+
+            </button>
+
+
+            <button
+                class="timeOption"
+                data-amount="1"
+                data-unit="years">
+
+                1 an
+
+            </button>
+
+
+            <div class="timeSeparator"></div>
+
+
+            <button
+                class="timeOption"
+                id="customTimeButton">
+
+                Custom Time
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         BOUTONS
+    ================================================== -->
+
+    <div id="bottomControls">
+
+        <button
+            class="controlButton"
+            id="actionButton">
+
+            ⚔ Action
+
+        </button>
+
+
+        <button
+            class="controlButton"
+            id="discussionButton">
+
+            💬 Discussion
+
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         CUSTOM TIME
+    ================================================== -->
+
+    <div id="customOverlay">
+
+        <div id="customBox">
+
+            <div class="modalTitle">
+
+                Temps personnalisé
+
+            </div>
+
+
+            <div id="customInputs">
+
+                <input
+                    id="customAmount"
+                    type="number"
+                    min="1"
+                    value="3">
+
+
+                <select id="customUnit">
+
+                    <option value="days">
+                        jours
+                    </option>
+
+                    <option value="weeks">
+                        semaines
+                    </option>
+
+                    <option value="months">
+                        mois
+                    </option>
+
+                    <option value="years">
+                        années
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="modalButtons">
+
+                <button
+                    class="button secondary"
+                    id="cancelCustom">
+
+                    Annuler
+
+                </button>
+
+
+                <button
+                    class="button primary"
+                    id="confirmCustom">
+
+                    Continuer
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="/js/auth.js"></script>
+<script src="/js/play.js"></script>
+
+</body>
+</html>
