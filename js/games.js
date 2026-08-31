@@ -1,153 +1,245 @@
-document.addEventListener(
-    "DOMContentLoaded",
-    async () => {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const user =
-            await PamplemoucheAuth.me();
+    const account =
+        document.getElementById("gamesAccount");
 
-
-        renderGames(
-            user
-        );
-
-    }
-);
-
-
-function renderGames(user) {
-
-    const container =
-        document.getElementById(
-            "games"
-        );
+    if (!account) return;
 
 
     /*
-        Pour l'instant on utilise
-        des parties locales.
+     * L'utilisateur est censé être connecté.
+     */
 
-        Le backend pourra ensuite
-        remplacer cette fonction.
-    */
+    const token =
+        PamplemoucheAuth.getToken();
 
-    const games =
-        JSON.parse(
-            localStorage.getItem(
-                "pamplemouche_games"
-            ) ||
-            "[]"
-        );
+    if (!token) {
 
+        /*
+         * Sécurité : si quelqu'un arrive
+         * directement sur games.html.
+         */
 
-    container.innerHTML = "";
-
-
-    if (
-        games.length === 0
-    ) {
-
-        container.innerHTML = `
-
-            <div class="gameCard">
-
-                <div class="gameCardTitle">
-
-                    Aucune partie
-
-                </div>
-
-
-                <div class="gameCardMeta">
-
-                    Commencez votre première histoire.
-
-                </div>
-
-
-                <a
-                    href="/play.html"
-                    class="button primary gameCardButton">
-
-                    Commencer
-
-                </a>
-
-            </div>
-
-        `;
-
+        window.location.href = "/";
 
         return;
 
     }
 
 
-    games.forEach(
-        game => {
+    /*
+     * HTML du compte
+     */
 
-            const card =
-                document.createElement(
-                    "div"
-                );
+    account.innerHTML = `
+
+        <div class="gamesAccount">
+
+            <div class="pampBalance">
+
+                🟡
+                <span id="pampAmount">
+                    …
+                </span>
+
+            </div>
 
 
-            card.className =
-                "gameCard";
+            <button
+                id="profileButton"
+                class="profileButton">
+
+                P
+
+            </button>
 
 
-            card.innerHTML = `
+            <div
+                id="accountMenu"
+                class="accountMenu">
 
-                <div class="gameCardTitle">
+                <div
+                    id="accountName"
+                    class="accountName">
 
-                    ${escapeHtml(
-                        game.name ||
-                        "Nouvelle partie"
-                    )}
+                    Compte
 
                 </div>
 
 
-                <div class="gameCardMeta">
+                <div
+                    id="menuPamp"
+                    class="accountPamp">
 
-                    ${escapeHtml(
-                        game.date ||
-                        "1 janvier 1936"
-                    )}
+                    🟡 …
 
                 </div>
 
 
-                <a
-                    href="/play.html?id=${encodeURIComponent(game.id)}"
-                    class="button primary gameCardButton">
+                <button
+                    id="logoutButton"
+                    class="accountLogout">
 
-                    Continuer
+                    Se déconnecter
 
-                </a>
+                </button>
 
-            `;
+            </div>
+
+        </div>
+
+    `;
 
 
-            container.appendChild(
-                card
-            );
+    /*
+     * Menu du compte
+     */
+
+    const profile =
+        document.getElementById(
+            "profileButton"
+        );
+
+    const menu =
+        document.getElementById(
+            "accountMenu"
+        );
+
+
+    profile.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+            menu.classList.toggle("open");
 
         }
     );
 
-}
+
+    document.addEventListener(
+        "click",
+        function () {
+
+            menu.classList.remove("open");
+
+        }
+    );
 
 
-function escapeHtml(text) {
+    document
+        .getElementById(
+            "logoutButton"
+        )
+        .addEventListener(
+            "click",
+            function () {
 
-    const div =
-        document.createElement(
-            "div"
+                PamplemoucheAuth.logout();
+
+            }
         );
 
-    div.textContent =
-        text;
 
-    return div.innerHTML;
+    /*
+     * Récupération du compte
+     */
+
+    loadAccount();
+
+});
+
+
+async function loadAccount() {
+
+    try {
+
+        const user =
+            await PamplemoucheAuth.fetchMe();
+
+        if (!user) return;
+
+
+        const username =
+            user.username ||
+            user.pseudo ||
+            user.name ||
+            "Pamplemouche";
+
+
+        const initial =
+            username
+                .trim()
+                .charAt(0)
+                .toUpperCase();
+
+
+        document
+            .getElementById(
+                "profileButton"
+            )
+            .textContent =
+                initial;
+
+
+        document
+            .getElementById(
+                "accountName"
+            )
+            .textContent =
+                username;
+
+
+        /*
+         * Si le solde est fourni par l'API,
+         * on l'affiche.
+         */
+
+        const pamp =
+            user.pamp ??
+            user.pamps ??
+            user.balance;
+
+
+        if (
+            pamp !== undefined &&
+            pamp !== null
+        ) {
+
+            const value =
+                Number(pamp)
+                    .toLocaleString("fr-FR");
+
+
+            document
+                .getElementById(
+                    "pampAmount"
+                )
+                .textContent =
+                    value;
+
+
+            document
+                .getElementById(
+                    "menuPamp"
+                )
+                .textContent =
+                    "🟡 " +
+                    value +
+                    " PAMP";
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Impossible de charger le compte:",
+            error
+        );
+
+    }
 
 }
