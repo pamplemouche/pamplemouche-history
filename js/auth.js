@@ -1,13 +1,12 @@
 
 /* =====================================================
    PAMPLEMOUCHE AUTH
-   Compatible avec login.pamplemouche.com
+   Écosystème Pamplemouche
 ===================================================== */
 
 (function () {
 
     "use strict";
-
 
     const LOGIN_URL =
         "https://login.pamplemouche.com";
@@ -43,10 +42,6 @@
                     token
                 );
 
-                /*
-                 * Supprime #token=... de l'adresse.
-                 */
-
                 history.replaceState(
                     null,
                     document.title,
@@ -55,20 +50,17 @@
                 );
 
                 return token;
-
             }
-
         }
 
         return localStorage.getItem(
             TOKEN_KEY
         );
-
     }
 
 
     /* =================================================
-       CONNECTÉ ?
+       ÉTAT DE CONNEXION
     ================================================= */
 
     function isLoggedIn() {
@@ -84,31 +76,15 @@
 
     function login() {
 
-        /*
-         * On demande à Login de revenir
-         * sur History après la connexion.
-         */
-
-        const redirect =
-            HISTORY_URL;
-
-
-        const loginUrl =
+        const url =
             LOGIN_URL +
             "?redirect=" +
             encodeURIComponent(
-                redirect
+                HISTORY_URL
             );
 
-
-        console.log(
-            "Redirection vers Login Pamplemouche:",
-            loginUrl
-        );
-
-
         window.location.assign(
-            loginUrl
+            url
         );
 
     }
@@ -124,49 +100,81 @@
             TOKEN_KEY
         );
 
+        localStorage.removeItem(
+            "arc_token"
+        );
+
+        localStorage.removeItem(
+            "oasis_token"
+        );
+
+        localStorage.removeItem(
+            "market_token"
+        );
+
         window.location.reload();
 
     }
 
 
     /* =================================================
-       API /ME
+       REQUÊTE AUTHENTIFIÉE
     ================================================= */
 
-    async function fetchMe() {
+    async function authenticatedFetch(
+        url,
+        options = {}
+    ) {
 
         const token =
             getToken();
 
-
         if (!token) {
 
-            return null;
+            throw new Error(
+                "Utilisateur non connecté."
+            );
 
         }
 
+        const headers =
+            new Headers(
+                options.headers || {}
+            );
+
+        headers.set(
+            "Authorization",
+            "Bearer " + token
+        );
+
+        headers.set(
+            "Content-Type",
+            "application/json"
+        );
+
+        return fetch(
+            url,
+            {
+                ...options,
+                headers
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       PROFIL
+    ================================================= */
+
+    async function fetchMe() {
 
         try {
 
             const response =
-                await fetch(
-                    "/api/me",
-                    {
-
-                        method:
-                            "GET",
-
-                        headers: {
-
-                            "Authorization":
-                                "Bearer " +
-                                token
-
-                        }
-
-                    }
+                await authenticatedFetch(
+                    "/api/me"
                 );
-
 
             if (!response.ok) {
 
@@ -174,15 +182,13 @@
 
             }
 
-
             return await response.json();
 
         }
-
         catch (error) {
 
             console.error(
-                "Erreur /api/me:",
+                "Erreur récupération profil:",
                 error
             );
 
@@ -194,158 +200,43 @@
 
 
     /* =================================================
-       BRANCHER LES BOUTONS LOGIN
+       BOUTONS DE CONNEXION
     ================================================= */
 
     function initializeLoginButtons() {
 
-        const buttons =
-            document.querySelectorAll(
+        document
+            .querySelectorAll(
                 "#loginButton, [data-pamp-login]"
-            );
+            )
+            .forEach(
+                button => {
 
+                    if (
+                        button.dataset.pampAuthReady ===
+                        "true"
+                    ) {
 
-        buttons.forEach(
-            button => {
-
-                /*
-                 * Évite de brancher deux fois
-                 * le même bouton.
-                 */
-
-                if (
-                    button.dataset.pampAuthReady ===
-                    "true"
-                ) {
-
-                    return;
-
-                }
-
-
-                button.dataset.pampAuthReady =
-                    "true";
-
-
-                button.addEventListener(
-                    "click",
-                    function (event) {
-
-                        event.preventDefault();
-
-                        login();
+                        return;
 
                     }
-                );
 
-            }
-        );
+                    button.dataset.pampAuthReady =
+                        "true";
 
-    }
+                    button.addEventListener(
+                        "click",
+                        event => {
 
+                            event.preventDefault();
 
-    /* =================================================
-       COMPTE DANS HISTORY
-    ================================================= */
+                            login();
 
-    async function initializeAccount() {
-
-        const account =
-            document.getElementById(
-                "gameAccount"
-            );
-
-
-        if (!account) {
-
-            return;
-
-        }
-
-
-        const token =
-            getToken();
-
-
-        if (!token) {
-
-            account.innerHTML = `
-
-                <button
-                    class="accountButton"
-                    id="loginButton">
-
-                    Se connecter
-
-                </button>
-
-            `;
-
-
-            initializeLoginButtons();
-
-            return;
-
-        }
-
-
-        account.innerHTML = `
-
-            <button
-                class="accountButton"
-                id="accountButton">
-
-                Compte
-
-            </button>
-
-        `;
-
-
-        const accountButton =
-            document.getElementById(
-                "accountButton"
-            );
-
-
-        accountButton.addEventListener(
-            "click",
-            async function () {
-
-                accountButton.textContent =
-                    "Chargement...";
-
-
-                const user =
-                    await fetchMe();
-
-
-                if (!user) {
-
-                    accountButton.textContent =
-                        "Session invalide";
-
-                    localStorage.removeItem(
-                        TOKEN_KEY
+                        }
                     );
 
-                    return;
-
                 }
-
-
-                const username =
-                    user.username ||
-                    user.pseudo ||
-                    user.name ||
-                    "Compte";
-
-
-                accountButton.textContent =
-                    username;
-
-            }
-        );
+            );
 
     }
 
@@ -356,28 +247,16 @@
 
     document.addEventListener(
         "DOMContentLoaded",
-        function () {
+        () => {
 
             /*
-             * Récupère immédiatement un éventuel
-             * token reçu depuis Login.
+             * Récupère un éventuel token renvoyé
+             * par login.pamplemouche.com.
              */
 
             getToken();
 
-
-            /*
-             * Branche les boutons déjà présents.
-             */
-
             initializeLoginButtons();
-
-
-            /*
-             * Initialise le compte de History.
-             */
-
-            initializeAccount();
 
         }
     );
@@ -389,21 +268,19 @@
 
     window.PamplemoucheAuth = {
 
-        getToken:
-            getToken,
+        getToken,
 
-        isLoggedIn:
-            isLoggedIn,
+        isLoggedIn,
 
-        login:
-            login,
+        login,
 
-        logout:
-            logout,
+        logout,
 
-        fetchMe:
-            fetchMe
+        fetchMe,
+
+        authenticatedFetch
 
     };
 
 })();
+
