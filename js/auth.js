@@ -12,6 +12,8 @@
     const LOGIN_URL =
         "https://login.pamplemouche.com";
 
+    const HISTORY_URL =
+        "https://history.pamplemouche.com";
 
     const TOKEN_KEY =
         "pamp_token";
@@ -22,11 +24,6 @@
     ================================================= */
 
     function getToken() {
-
-        /*
-         * 1. Vérifie si login.pamplemouche.com
-         *    vient de nous renvoyer avec #token=...
-         */
 
         const hash =
             window.location.hash.substring(1);
@@ -47,7 +44,7 @@
                 );
 
                 /*
-                 * Nettoie le token de l'URL.
+                 * Supprime #token=... de l'adresse.
                  */
 
                 history.replaceState(
@@ -62,11 +59,6 @@
             }
 
         }
-
-
-        /*
-         * 2. Token déjà enregistré.
-         */
 
         return localStorage.getItem(
             TOKEN_KEY
@@ -92,20 +84,32 @@
 
     function login() {
 
-        const currentUrl =
-            window.location.href.split("#")[0];
+        /*
+         * On demande à Login de revenir
+         * sur History après la connexion.
+         */
+
+        const redirect =
+            HISTORY_URL;
 
 
-        const url =
+        const loginUrl =
             LOGIN_URL +
             "?redirect=" +
             encodeURIComponent(
-                currentUrl
+                redirect
             );
 
 
-        window.location.href =
-            url;
+        console.log(
+            "Redirection vers Login Pamplemouche:",
+            loginUrl
+        );
+
+
+        window.location.assign(
+            loginUrl
+        );
 
     }
 
@@ -120,30 +124,13 @@
             TOKEN_KEY
         );
 
-        /*
-         * Les autres sites de l'écosystème
-         * peuvent également utiliser ces copies.
-         */
-
-        localStorage.removeItem(
-            "arc_token"
-        );
-
-        localStorage.removeItem(
-            "oasis_token"
-        );
-
-        localStorage.removeItem(
-            "market_token"
-        );
-
         window.location.reload();
 
     }
 
 
     /* =================================================
-       API
+       API /ME
     ================================================= */
 
     async function fetchMe() {
@@ -207,7 +194,58 @@
 
 
     /* =================================================
-       INITIALISATION DU COMPTE
+       BRANCHER LES BOUTONS LOGIN
+    ================================================= */
+
+    function initializeLoginButtons() {
+
+        const buttons =
+            document.querySelectorAll(
+                "#loginButton, [data-pamp-login]"
+            );
+
+
+        buttons.forEach(
+            button => {
+
+                /*
+                 * Évite de brancher deux fois
+                 * le même bouton.
+                 */
+
+                if (
+                    button.dataset.pampAuthReady ===
+                    "true"
+                ) {
+
+                    return;
+
+                }
+
+
+                button.dataset.pampAuthReady =
+                    "true";
+
+
+                button.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.preventDefault();
+
+                        login();
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =================================================
+       COMPTE DANS HISTORY
     ================================================= */
 
     async function initializeAccount() {
@@ -244,15 +282,7 @@
             `;
 
 
-            document
-                .getElementById(
-                    "loginButton"
-                )
-                .addEventListener(
-                    "click",
-                    login
-                );
-
+            initializeLoginButtons();
 
             return;
 
@@ -280,7 +310,11 @@
 
         accountButton.addEventListener(
             "click",
-            async () => {
+            async function () {
+
+                accountButton.textContent =
+                    "Chargement...";
+
 
                 const user =
                     await fetchMe();
@@ -322,7 +356,26 @@
 
     document.addEventListener(
         "DOMContentLoaded",
-        () => {
+        function () {
+
+            /*
+             * Récupère immédiatement un éventuel
+             * token reçu depuis Login.
+             */
+
+            getToken();
+
+
+            /*
+             * Branche les boutons déjà présents.
+             */
+
+            initializeLoginButtons();
+
+
+            /*
+             * Initialise le compte de History.
+             */
 
             initializeAccount();
 
