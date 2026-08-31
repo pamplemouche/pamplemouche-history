@@ -1,6 +1,8 @@
+
 (function () {
 
     "use strict";
+
 
     const LOGIN_URL =
         "https://login.pamplemouche.com";
@@ -11,6 +13,10 @@
     const TOKEN_KEY =
         "pamp_token";
 
+
+    /* =================================================
+       TOKEN
+    ================================================= */
 
     function getToken() {
 
@@ -56,17 +62,28 @@
     }
 
 
+    /* =================================================
+       LOGIN
+    ================================================= */
+
     function login() {
 
-        window.location.href =
+        const url =
             LOGIN_URL +
             "?redirect=" +
             encodeURIComponent(
                 HISTORY_URL
             );
 
+        window.location.href =
+            url;
+
     }
 
+
+    /* =================================================
+       LOGOUT
+    ================================================= */
 
     function logout() {
 
@@ -79,56 +96,38 @@
     }
 
 
-    async function fetchMe() {
+    /* =================================================
+       GAMES ACCOUNT
+    ================================================= */
 
-        const token =
-            getToken();
-
-        if (!token) return null;
-
-        try {
-
-            const response =
-                await fetch(
-                    "/api/me",
-                    {
-                        headers: {
-                            Authorization:
-                                "Bearer " + token
-                        }
-                    }
-                );
-
-            if (!response.ok) {
-
-                return null;
-
-            }
-
-            return await response.json();
-
-        } catch {
-
-            return null;
-
-        }
-
-    }
-
-
-    async function initializeGamesAccount() {
+    function initializeGamesAccount() {
 
         const container =
             document.getElementById(
                 "gamesAccount"
             );
 
-        if (!container) return;
 
+        /*
+         * Cette partie ne s'exécute que sur
+         * games.html.
+         */
+
+        if (!container) {
+
+            return;
+
+        }
+
+
+        /*
+         * Pas connecté
+         */
 
         if (!isLoggedIn()) {
 
             container.innerHTML = `
+
                 <button
                     id="gamesLoginButton"
                     class="accountButton">
@@ -136,111 +135,136 @@
                     Se connecter
 
                 </button>
+
             `;
+
 
             document
                 .getElementById(
                     "gamesLoginButton"
                 )
-                .onclick = login;
+                .addEventListener(
+                    "click",
+                    login
+                );
+
 
             return;
+
         }
 
 
-        const user =
-            await fetchMe();
-
-
         /*
-         * Même si /api/me ne fonctionne pas,
-         * on affiche quand même le rond.
+         * CONNECTÉ
+         *
+         * On affiche immédiatement
+         * le compte.
          */
-
-        const username =
-            user?.username ||
-            user?.pseudo ||
-            user?.name ||
-            "P";
-
-
-        const initial =
-            username
-                .trim()
-                .charAt(0)
-                .toUpperCase();
-
-
-        const pamp =
-            user?.pamp ??
-            user?.pamps ??
-            user?.balance;
-
 
         container.innerHTML = `
 
-            <div class="gamesProfile">
+            <div
+                class="gamesProfile"
+                style="
+                    position:relative;
+                    display:flex;
+                    align-items:center;
+                    gap:10px;
+                ">
 
-                ${
-                    pamp !== undefined &&
-                    pamp !== null
-                    ?
-                    `
-                    <div class="pampBalance">
+                <div
+                    class="pampBalance"
+                    id="pampBalance"
+                    style="
+                        font-weight:600;
+                    ">
 
-                        🟡
-                        ${Number(pamp).toLocaleString("fr-FR")}
-                        PAMP
+                    🟡 — PAMP
 
-                    </div>
-                    `
-                    :
-                    ""
-                }
+                </div>
+
 
                 <button
                     id="profileButton"
-                    class="profileButton">
+                    class="profileButton"
+                    style="
+                        width:40px;
+                        height:40px;
+                        border-radius:50%;
+                        border:none;
+                        cursor:pointer;
+                        font-weight:bold;
+                        font-size:16px;
+                    ">
 
-                    ${initial}
+                    P
 
                 </button>
 
+
                 <div
                     id="accountMenu"
-                    class="accountMenu">
+                    class="accountMenu"
+                    style="
+                        display:none;
+                        position:absolute;
+                        top:50px;
+                        right:0;
+                        min-width:180px;
+                        padding:15px;
+                        background:#151515;
+                        border:1px solid #333;
+                        border-radius:12px;
+                        z-index:9999;
+                    ">
 
-                    <strong>
-                        ${escapeHtml(username)}
-                    </strong>
+                    <div
+                        id="accountName"
+                        style="
+                            margin-bottom:12px;
+                            font-weight:bold;
+                        ">
 
-                    ${
-                        pamp !== undefined &&
-                        pamp !== null
-                        ?
-                        `
-                        <div>
-                            🟡
-                            ${Number(pamp).toLocaleString("fr-FR")}
-                            PAMP
-                        </div>
-                        `
-                        :
-                        ""
-                    }
+                        Compte
+
+                    </div>
+
+
+                    <div
+                        id="menuPamp"
+                        style="
+                            margin-bottom:12px;
+                        ">
+
+                        🟡 — PAMP
+
+                    </div>
+
 
                     <button
                         id="logoutButton">
 
-                        Déconnexion
+                        Se déconnecter
 
                     </button>
 
                 </div>
 
             </div>
+
         `;
 
+
+        /*
+         * Récupération du profil
+         */
+
+        fetchMe();
+
+
+        /*
+         * Menu
+         */
 
         const profileButton =
             document.getElementById(
@@ -253,25 +277,30 @@
             );
 
 
-        profileButton.onclick =
+        profileButton.addEventListener(
+            "click",
             function (event) {
 
                 event.stopPropagation();
 
-                accountMenu.classList.toggle(
-                    "open"
-                );
+                accountMenu.style.display =
+                    accountMenu.style.display ===
+                    "none"
+                    ?
+                    "block"
+                    :
+                    "none";
 
-            };
+            }
+        );
 
 
         document.addEventListener(
             "click",
             function () {
 
-                accountMenu.classList.remove(
-                    "open"
-                );
+                accountMenu.style.display =
+                    "none";
 
             }
         );
@@ -281,23 +310,151 @@
             .getElementById(
                 "logoutButton"
             )
-            .onclick =
-                logout;
+            .addEventListener(
+                "click",
+                logout
+            );
 
     }
 
 
-    function escapeHtml(text) {
+    /* =================================================
+       PROFIL
+    ================================================= */
 
-        const div =
-            document.createElement("div");
+    async function fetchMe() {
 
-        div.textContent = text;
+        const token =
+            getToken();
 
-        return div.innerHTML;
+        if (!token) return;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/me",
+                    {
+
+                        headers: {
+
+                            "Authorization":
+                                "Bearer " +
+                                token
+
+                        }
+
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                console.warn(
+                    "/api/me indisponible"
+                );
+
+                return;
+
+            }
+
+
+            const user =
+                await response.json();
+
+
+            const username =
+                user.username ||
+                user.pseudo ||
+                user.name ||
+                "P";
+
+
+            const initial =
+                username
+                    .trim()
+                    .charAt(0)
+                    .toUpperCase();
+
+
+            document
+                .getElementById(
+                    "profileButton"
+                )
+                .textContent =
+                    initial;
+
+
+            document
+                .getElementById(
+                    "accountName"
+                )
+                .textContent =
+                    username;
+
+
+            /*
+             * Si ton API renvoie déjà
+             * le solde, on l'affiche.
+             */
+
+            const pamp =
+                user.pamp ??
+                user.pamps ??
+                user.balance;
+
+
+            if (
+                pamp !== undefined &&
+                pamp !== null
+            ) {
+
+                const formatted =
+                    Number(pamp)
+                        .toLocaleString(
+                            "fr-FR"
+                        );
+
+
+                document
+                    .getElementById(
+                        "pampBalance"
+                    )
+                    .textContent =
+                        "🟡 " +
+                        formatted +
+                        " PAMP";
+
+
+                document
+                    .getElementById(
+                        "menuPamp"
+                    )
+                    .textContent =
+                        "🟡 " +
+                        formatted +
+                        " PAMP";
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erreur récupération compte:",
+                error
+            );
+
+        }
 
     }
 
+
+    /* =================================================
+       INIT
+    ================================================= */
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -310,6 +467,10 @@
         }
     );
 
+
+    /* =================================================
+       API PUBLIQUE
+    ================================================= */
 
     window.PamplemoucheAuth = {
 
