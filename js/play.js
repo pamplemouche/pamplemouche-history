@@ -322,6 +322,14 @@ function drawMap(path) {
                     d.geometry
                 )[1]
         )
+        .attr(
+    "font-size",
+    d =>
+        getLabelFontSize(
+            d,
+            path
+        ) + "px"
+)
         .text(
             d =>
                 d.name
@@ -1481,4 +1489,29 @@ function escapeHtml(
 
     return div.innerHTML;
 
+}
+function getLabelFontSize(d, path) {
+
+    const bounds =
+        path.bounds(d.geometry);
+
+    const width =
+        bounds[1][0] -
+        bounds[0][0];
+
+    const height =
+        bounds[1][1] -
+        bounds[0][1];
+
+    const size =
+        Math.min(
+            width / (d.name.length * 0.65),
+            height * 0.35,
+            14
+        );
+
+    return Math.max(
+        4,
+        size
+    );
 }
