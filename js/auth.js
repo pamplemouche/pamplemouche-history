@@ -1,4 +1,4 @@
-```javascript
+
 /* =====================================================
    PAMPLEMOUCHE AUTH
    Compatible avec login.pamplemouche.com
@@ -354,4 +354,3 @@
     };
 
 })();
-```
