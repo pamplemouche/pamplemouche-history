@@ -1,9 +1,4 @@
 
-/* =====================================================
-   PAMPLEMOUCHE AUTH
-   Écosystème Pamplemouche
-===================================================== */
-
 (function () {
 
     "use strict";
@@ -60,7 +55,7 @@
 
 
     /* =================================================
-       ÉTAT DE CONNEXION
+       CONNEXION
     ================================================= */
 
     function isLoggedIn() {
@@ -69,10 +64,6 @@
 
     }
 
-
-    /* =================================================
-       CONNEXION
-    ================================================= */
 
     function login() {
 
@@ -83,9 +74,7 @@
                 HISTORY_URL
             );
 
-        window.location.assign(
-            url
-        );
+        window.location.href = url;
 
     }
 
@@ -100,25 +89,13 @@
             TOKEN_KEY
         );
 
-        localStorage.removeItem(
-            "arc_token"
-        );
-
-        localStorage.removeItem(
-            "oasis_token"
-        );
-
-        localStorage.removeItem(
-            "market_token"
-        );
-
         window.location.reload();
 
     }
 
 
     /* =================================================
-       REQUÊTE AUTHENTIFIÉE
+       API AUTHENTIFIÉE
     ================================================= */
 
     async function authenticatedFetch(
@@ -132,7 +109,7 @@
         if (!token) {
 
             throw new Error(
-                "Utilisateur non connecté."
+                "Utilisateur non connecté"
             );
 
         }
@@ -145,11 +122,6 @@
         headers.set(
             "Authorization",
             "Bearer " + token
-        );
-
-        headers.set(
-            "Content-Type",
-            "application/json"
         );
 
         return fetch(
@@ -185,10 +157,11 @@
             return await response.json();
 
         }
+
         catch (error) {
 
             console.error(
-                "Erreur récupération profil:",
+                "Erreur profil:",
                 error
             );
 
@@ -200,43 +173,291 @@
 
 
     /* =================================================
-       BOUTONS DE CONNEXION
+       COMPTE GAMES
     ================================================= */
 
-    function initializeLoginButtons() {
+    async function initializeGamesAccount() {
 
-        document
-            .querySelectorAll(
-                "#loginButton, [data-pamp-login]"
-            )
-            .forEach(
-                button => {
+        const container =
+            document.getElementById(
+                "gamesAccount"
+            );
 
-                    if (
-                        button.dataset.pampAuthReady ===
-                        "true"
-                    ) {
 
-                        return;
+        /*
+         * Si on n'est pas sur games.html,
+         * on ne fait absolument rien.
+         */
 
+        if (!container) {
+
+            return;
+
+        }
+
+
+        /*
+         * Pas connecté.
+         */
+
+        if (!isLoggedIn()) {
+
+            container.innerHTML = `
+
+                <button
+                    id="gamesLoginButton"
+                    class="accountButton">
+
+                    Se connecter
+
+                </button>
+
+            `;
+
+
+            document
+                .getElementById(
+                    "gamesLoginButton"
+                )
+                .addEventListener(
+                    "click",
+                    login
+                );
+
+
+            return;
+
+        }
+
+
+        /*
+         * Affichage temporaire pendant
+         * la récupération du compte.
+         */
+
+        container.innerHTML = `
+
+            <div
+                class="gamesAccountLoading">
+
+                ...
+
+            </div>
+
+        `;
+
+
+        const user =
+            await fetchMe();
+
+
+        /*
+         * Token invalide.
+         */
+
+        if (!user) {
+
+            container.innerHTML = `
+
+                <button
+                    class="accountButton"
+                    id="gamesLoginButton">
+
+                    Se connecter
+
+                </button>
+
+            `;
+
+
+            document
+                .getElementById(
+                    "gamesLoginButton"
+                )
+                .addEventListener(
+                    "click",
+                    login
+                );
+
+
+            return;
+
+        }
+
+
+        /*
+         * Nom utilisateur.
+         */
+
+        const username =
+            user.username ||
+            user.pseudo ||
+            user.name ||
+            "Pamplemouche";
+
+
+        const initial =
+            username
+                .trim()
+                .charAt(0)
+                .toUpperCase();
+
+
+        /*
+         * Solde Pamp si l'API /me
+         * le fournit déjà.
+         */
+
+        const pamp =
+            user.pamp ??
+            user.pamps ??
+            user.balance ??
+            null;
+
+
+        container.innerHTML = `
+
+            <div class="gamesProfile">
+
+                ${
+                    pamp !== null
+                    ?
+                    `
+                    <div class="pampBalance">
+
+                        <span>
+                            🟡
+                        </span>
+
+                        <span>
+                            ${Number(pamp).toLocaleString("fr-FR")}
+                        </span>
+
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                <button
+                    id="profileButton"
+                    class="profileButton">
+
+                    ${escapeHtml(initial)}
+
+                </button>
+
+
+                <div
+                    id="accountMenu"
+                    class="accountMenu">
+
+                    <div
+                        class="accountName">
+
+                        ${escapeHtml(username)}
+
+                    </div>
+
+
+                    ${
+                        pamp !== null
+                        ?
+                        `
+                        <div class="accountPamp">
+
+                            🟡
+                            ${Number(pamp).toLocaleString("fr-FR")}
+                            PAMP
+
+                        </div>
+                        `
+                        :
+                        ""
                     }
 
-                    button.dataset.pampAuthReady =
-                        "true";
 
-                    button.addEventListener(
-                        "click",
-                        event => {
+                    <button
+                        id="logoutButton"
+                        class="accountLogout">
 
-                            event.preventDefault();
+                        Se déconnecter
 
-                            login();
+                    </button>
 
-                        }
-                    );
+                </div>
 
-                }
+            </div>
+
+        `;
+
+
+        const profileButton =
+            document.getElementById(
+                "profileButton"
             );
+
+
+        const accountMenu =
+            document.getElementById(
+                "accountMenu"
+            );
+
+
+        profileButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.stopPropagation();
+
+                accountMenu.classList.toggle(
+                    "open"
+                );
+
+            }
+        );
+
+
+        document.addEventListener(
+            "click",
+            function () {
+
+                accountMenu.classList.remove(
+                    "open"
+                );
+
+            }
+        );
+
+
+        document
+            .getElementById(
+                "logoutButton"
+            )
+            .addEventListener(
+                "click",
+                logout
+            );
+
+    }
+
+
+    /* =================================================
+       UTILITAIRE
+    ================================================= */
+
+    function escapeHtml(text) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent =
+            text;
+
+        return div.innerHTML;
 
     }
 
@@ -247,16 +468,11 @@
 
     document.addEventListener(
         "DOMContentLoaded",
-        () => {
-
-            /*
-             * Récupère un éventuel token renvoyé
-             * par login.pamplemouche.com.
-             */
+        function () {
 
             getToken();
 
-            initializeLoginButtons();
+            initializeGamesAccount();
 
         }
     );
@@ -269,18 +485,12 @@
     window.PamplemoucheAuth = {
 
         getToken,
-
         isLoggedIn,
-
         login,
-
         logout,
-
-        fetchMe,
-
-        authenticatedFetch
+        authenticatedFetch,
+        fetchMe
 
     };
 
 })();
-
