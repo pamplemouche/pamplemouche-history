@@ -6,14 +6,6 @@ export async function onRequestPost(context) {
             await context.request.json();
 
 
-        /*
-            Ici on récupère la clé
-            depuis les secrets Cloudflare.
-
-            NE JAMAIS mettre cette clé
-            dans play.js.
-        */
-
         const apiKey =
             context.env.AI_API_KEY;
 
@@ -23,7 +15,7 @@ export async function onRequestPost(context) {
             return Response.json(
                 {
                     error:
-                        "AI_API_KEY n'est pas configurée."
+                        "AI_API_KEY n'est pas configurée sur Cloudflare."
                 },
                 {
                     status: 500
@@ -34,47 +26,63 @@ export async function onRequestPost(context) {
 
 
         /*
-            =================================================
-            IMPORTANT
-            =================================================
+         * =====================================================
+         * GEMINI
+         * =====================================================
+         */
 
-            Remplace cette URL par l'API IA
-            que tu utiliseras réellement.
+        const endpoint =
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-            Le reste du système n'aura pas besoin
-            d'être changé.
-        */
+
+        const prompt =
+            buildPrompt(body);
 
 
         const response =
             await fetch(
-                "https://api.openai.com/v1/responses",
+                endpoint +
+                "?key=" +
+                encodeURIComponent(apiKey),
                 {
 
-                    method:
-                        "POST",
+                    method: "POST",
 
                     headers: {
 
                         "Content-Type":
-                            "application/json",
-
-                        "Authorization":
-                            "Bearer " +
-                            apiKey
+                            "application/json"
 
                     },
 
                     body:
                         JSON.stringify({
 
-                            model:
-                                "gpt-5",
+                            contents: [
 
-                            input:
-                                buildPrompt(
-                                    body
-                                )
+                                {
+
+                                    role: "user",
+
+                                    parts: [
+
+                                        {
+                                            text: prompt
+                                        }
+
+                                    ]
+
+                                }
+
+                            ],
+
+                            generationConfig: {
+
+                                temperature: 0.7,
+
+                                maxOutputTokens: 4096
+
+                            }
 
                         })
 
@@ -86,14 +94,18 @@ export async function onRequestPost(context) {
             await response.json();
 
 
-        if (
-            !response.ok
-        ) {
+        if (!response.ok) {
+
+            console.error(
+                "Gemini error:",
+                data
+            );
+
 
             return Response.json(
                 {
                     error:
-                        "Erreur du fournisseur IA.",
+                        "Gemini a renvoyé une erreur.",
                     details:
                         data
                 },
@@ -107,24 +119,13 @@ export async function onRequestPost(context) {
 
 
         const message =
-            extractText(
-                data
-            );
+            extractGeminiText(data);
 
 
         return Response.json({
 
             message:
-                message,
-
-            /*
-                Pour une future simulation structurée,
-                l'IA pourra également renvoyer :
-
-                    worldState
-
-                ici.
-            */
+                message
 
         });
 
@@ -133,6 +134,7 @@ export async function onRequestPost(context) {
     catch (error) {
 
         console.error(
+            "AI Function error:",
             error
         );
 
@@ -140,7 +142,7 @@ export async function onRequestPost(context) {
         return Response.json(
             {
                 error:
-                    "Erreur serveur IA."
+                    "Erreur lors de la communication avec Gemini."
             },
             {
                 status: 500
@@ -152,13 +154,11 @@ export async function onRequestPost(context) {
 }
 
 
-/* =====================================================
+/* =========================================================
    PROMPT
-===================================================== */
+========================================================= */
 
-function buildPrompt(
-    body
-) {
+function buildPrompt(body) {
 
     if (
         body.type ===
@@ -167,22 +167,44 @@ function buildPrompt(
 
         return `
 
-Tu es l'assistant de Pamplemouche History.
+Tu es l'assistant IA de Pamplemouche History.
 
-Date actuelle :
-${body.date}
+Tu aides le joueur à comprendre le monde
+dans lequel il joue.
 
-Pays sélectionné :
+DATE ACTUELLE :
+${body.date || "inconnue"}
+
+PAYS SÉLECTIONNÉ :
 ${body.selectedCountry || "aucun"}
 
-État actuel du monde :
-${JSON.stringify(body.worldState)}
+ÉTAT ACTUEL DU MONDE :
+${JSON.stringify(
+    body.worldState || {},
+    null,
+    2
+)}
 
-Question du joueur :
-${body.message}
+QUESTION DU JOUEUR :
+${body.message || ""}
 
-Réponds de manière concise et utile.
-Tu ne dois pas modifier le monde.
+Réponds naturellement en français.
+
+Tu peux expliquer :
+
+- la situation d'un pays ;
+- son économie ;
+- son armée ;
+- sa diplomatie ;
+- ses relations avec les autres pays ;
+- les événements actuels ;
+- les conséquences possibles d'une décision.
+
+IMPORTANT :
+
+Cette requête est uniquement une discussion.
+
+NE MODIFIE PAS l'état du monde.
 
 `;
 
@@ -199,98 +221,156 @@ Tu ne dois pas modifier le monde.
 Tu es le moteur de simulation
 de Pamplemouche History.
 
-Date de départ :
+Tu dois simuler l'évolution du monde
+entre deux dates.
+
+DATE DE DÉPART :
 ${body.dateStart}
 
-Date de fin :
+DATE D'ARRIVÉE :
 ${body.dateEnd}
 
-Durée :
-${body.duration.amount} ${body.duration.unit}
+DURÉE :
+${body.duration?.amount || 0}
+${body.duration?.unit || ""}
 
-Pays du joueur :
+PAYS DU JOUEUR :
 ${body.selectedCountry || "aucun"}
 
-Actions du joueur :
-${JSON.stringify(body.actions)}
+ACTIONS DU JOUEUR :
+${JSON.stringify(
+    body.actions || [],
+    null,
+    2
+)}
 
-État initial du monde :
-${JSON.stringify(body.worldState)}
+ÉTAT INITIAL DU MONDE :
+${JSON.stringify(
+    body.worldState || {},
+    null,
+    2
+)}
 
-SIMULE toute la période.
 
-Tu dois simuler :
+=====================================================
+RÈGLES DE SIMULATION
+=====================================================
 
-- les conséquences des actions du joueur ;
-- les actions des autres pays ;
-- diplomatie ;
-- guerres ;
-- économie ;
-- politique ;
-- événements normaux ;
-- changements territoriaux ;
-- conséquences indirectes.
+Simule toute la période.
 
-Ne fais PAS seulement les actions du joueur :
-le monde doit continuer à évoluer normalement
-pendant toute la période.
+Les actions du joueur doivent avoir
+des conséquences réalistes.
 
-Pour l'instant retourne une description textuelle
-de la simulation.
+Mais tu dois également simuler
+ce qui se passe indépendamment du joueur.
+
+Le monde ne doit PAS rester immobile.
+
+Les autres pays doivent pouvoir :
+
+- déclarer des guerres ;
+- signer des traités ;
+- améliorer ou détériorer leurs relations ;
+- construire des infrastructures ;
+- développer leur économie ;
+- produire des équipements ;
+- mobiliser leurs armées ;
+- changer de gouvernement ;
+- prendre des décisions diplomatiques ;
+- subir des événements ;
+- réagir aux actions du joueur.
+
+Les conséquences doivent être cohérentes
+avec la durée de la simulation.
+
+Une action prenant plusieurs mois
+ne doit pas être instantanée.
+
+Les changements territoriaux doivent être
+réalistes et cohérents avec les événements.
+
+
+=====================================================
+RÉSULTAT
+=====================================================
+
+Pour l'instant, retourne principalement
+un compte-rendu clair de ce qui s'est passé
+pendant la période.
+
+Explique notamment :
+
+- les principales actions du joueur ;
+- les réactions des autres pays ;
+- les guerres ;
+- la diplomatie ;
+- l'économie ;
+- les changements territoriaux ;
+- les événements importants.
+
+Ne prétends pas qu'un événement a eu lieu
+s'il n'est pas cohérent avec l'état initial
+du monde.
 
 `;
 
     }
 
 
-    return "Requête inconnue.";
+    return `
+
+Requête inconnue.
+
+Type reçu :
+${body.type || "aucun"}
+
+`;
 
 }
 
 
-/* =====================================================
-   EXTRACTION
-===================================================== */
+/* =========================================================
+   EXTRACTION GEMINI
+========================================================= */
 
-function extractText(
-    data
-) {
+function extractGeminiText(data) {
 
     if (
-        data.output_text
+        !data ||
+        !data.candidates ||
+        !data.candidates.length
     ) {
 
-        return data.output_text;
+        return "Gemini n'a fourni aucune réponse.";
 
     }
 
 
+    const candidate =
+        data.candidates[0];
+
+
     if (
-        data.output &&
-        Array.isArray(
-            data.output
+        !candidate.content ||
+        !candidate.content.parts
+    ) {
+
+        return "Gemini n'a fourni aucun texte.";
+
+    }
+
+
+    return candidate.content.parts
+        .filter(
+            part =>
+                typeof part.text ===
+                "string"
         )
-    ) {
-
-        return data.output
-            .flatMap(
-                item =>
-                    item.content || []
-            )
-            .filter(
-                item =>
-                    item.type ===
-                    "output_text"
-            )
-            .map(
-                item =>
-                    item.text
-            )
-            .join("\n");
-
-    }
-
-
-    return "Aucune réponse de l'IA.";
+        .map(
+            part =>
+                part.text
+        )
+        .join("\n")
+        .trim();
 
 }
