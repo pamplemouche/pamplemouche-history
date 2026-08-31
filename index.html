@@ -114,15 +114,57 @@
 
 <script src="/js/auth.js"></script>
 
+<script src="/js/auth.js"></script>
+
 <script>
 
-document
-    .getElementById("loginButton")
-    .addEventListener("click", () => {
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-        PamplemoucheAuth.login();
+        const button =
+            document.getElementById(
+                "loginButton"
+            );
 
-    });
+        if (!button) return;
+
+
+        if (
+            PamplemoucheAuth.isLoggedIn()
+        ) {
+
+            button.textContent =
+                "Jouer";
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    window.location.href =
+                        "/play.html";
+
+                }
+            );
+
+        }
+
+        else {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    PamplemoucheAuth.login();
+
+                }
+            );
+
+        }
+
+    }
+);
 
 </script>
 
