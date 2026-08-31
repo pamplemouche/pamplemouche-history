@@ -1,4 +1,3 @@
-
 (function () {
 
     "use strict";
@@ -12,10 +11,6 @@
     const TOKEN_KEY =
         "pamp_token";
 
-
-    /* =================================================
-       TOKEN
-    ================================================= */
 
     function getToken() {
 
@@ -54,10 +49,6 @@
     }
 
 
-    /* =================================================
-       CONNEXION
-    ================================================= */
-
     function isLoggedIn() {
 
         return !!getToken();
@@ -67,21 +58,15 @@
 
     function login() {
 
-        const url =
+        window.location.href =
             LOGIN_URL +
             "?redirect=" +
             encodeURIComponent(
                 HISTORY_URL
             );
 
-        window.location.href = url;
-
     }
 
-
-    /* =================================================
-       DÉCONNEXION
-    ================================================= */
 
     function logout() {
 
@@ -94,58 +79,24 @@
     }
 
 
-    /* =================================================
-       API AUTHENTIFIÉE
-    ================================================= */
-
-    async function authenticatedFetch(
-        url,
-        options = {}
-    ) {
+    async function fetchMe() {
 
         const token =
             getToken();
 
-        if (!token) {
-
-            throw new Error(
-                "Utilisateur non connecté"
-            );
-
-        }
-
-        const headers =
-            new Headers(
-                options.headers || {}
-            );
-
-        headers.set(
-            "Authorization",
-            "Bearer " + token
-        );
-
-        return fetch(
-            url,
-            {
-                ...options,
-                headers
-            }
-        );
-
-    }
-
-
-    /* =================================================
-       PROFIL
-    ================================================= */
-
-    async function fetchMe() {
+        if (!token) return null;
 
         try {
 
             const response =
-                await authenticatedFetch(
-                    "/api/me"
+                await fetch(
+                    "/api/me",
+                    {
+                        headers: {
+                            Authorization:
+                                "Bearer " + token
+                        }
+                    }
                 );
 
             if (!response.ok) {
@@ -156,14 +107,7 @@
 
             return await response.json();
 
-        }
-
-        catch (error) {
-
-            console.error(
-                "Erreur profil:",
-                error
-            );
+        } catch {
 
             return null;
 
@@ -172,10 +116,6 @@
     }
 
 
-    /* =================================================
-       COMPTE GAMES
-    ================================================= */
-
     async function initializeGamesAccount() {
 
         const container =
@@ -183,27 +123,12 @@
                 "gamesAccount"
             );
 
+        if (!container) return;
 
-        /*
-         * Si on n'est pas sur games.html,
-         * on ne fait absolument rien.
-         */
-
-        if (!container) {
-
-            return;
-
-        }
-
-
-        /*
-         * Pas connecté.
-         */
 
         if (!isLoggedIn()) {
 
             container.innerHTML = `
-
                 <button
                     id="gamesLoginButton"
                     class="accountButton">
@@ -211,40 +136,16 @@
                     Se connecter
 
                 </button>
-
             `;
-
 
             document
                 .getElementById(
                     "gamesLoginButton"
                 )
-                .addEventListener(
-                    "click",
-                    login
-                );
-
+                .onclick = login;
 
             return;
-
         }
-
-
-        /*
-         * Affichage temporaire pendant
-         * la récupération du compte.
-         */
-
-        container.innerHTML = `
-
-            <div
-                class="gamesAccountLoading">
-
-                ...
-
-            </div>
-
-        `;
 
 
         const user =
@@ -252,48 +153,15 @@
 
 
         /*
-         * Token invalide.
-         */
-
-        if (!user) {
-
-            container.innerHTML = `
-
-                <button
-                    class="accountButton"
-                    id="gamesLoginButton">
-
-                    Se connecter
-
-                </button>
-
-            `;
-
-
-            document
-                .getElementById(
-                    "gamesLoginButton"
-                )
-                .addEventListener(
-                    "click",
-                    login
-                );
-
-
-            return;
-
-        }
-
-
-        /*
-         * Nom utilisateur.
+         * Même si /api/me ne fonctionne pas,
+         * on affiche quand même le rond.
          */
 
         const username =
-            user.username ||
-            user.pseudo ||
-            user.name ||
-            "Pamplemouche";
+            user?.username ||
+            user?.pseudo ||
+            user?.name ||
+            "P";
 
 
         const initial =
@@ -303,16 +171,10 @@
                 .toUpperCase();
 
 
-        /*
-         * Solde Pamp si l'API /me
-         * le fournit déjà.
-         */
-
         const pamp =
-            user.pamp ??
-            user.pamps ??
-            user.balance ??
-            null;
+            user?.pamp ??
+            user?.pamps ??
+            user?.balance;
 
 
         container.innerHTML = `
@@ -320,18 +182,15 @@
             <div class="gamesProfile">
 
                 ${
+                    pamp !== undefined &&
                     pamp !== null
                     ?
                     `
                     <div class="pampBalance">
 
-                        <span>
-                            🟡
-                        </span>
-
-                        <span>
-                            ${Number(pamp).toLocaleString("fr-FR")}
-                        </span>
+                        🟡
+                        ${Number(pamp).toLocaleString("fr-FR")}
+                        PAMP
 
                     </div>
                     `
@@ -339,57 +198,47 @@
                     ""
                 }
 
-
                 <button
                     id="profileButton"
                     class="profileButton">
 
-                    ${escapeHtml(initial)}
+                    ${initial}
 
                 </button>
-
 
                 <div
                     id="accountMenu"
                     class="accountMenu">
 
-                    <div
-                        class="accountName">
-
+                    <strong>
                         ${escapeHtml(username)}
-
-                    </div>
-
+                    </strong>
 
                     ${
+                        pamp !== undefined &&
                         pamp !== null
                         ?
                         `
-                        <div class="accountPamp">
-
+                        <div>
                             🟡
                             ${Number(pamp).toLocaleString("fr-FR")}
                             PAMP
-
                         </div>
                         `
                         :
                         ""
                     }
 
-
                     <button
-                        id="logoutButton"
-                        class="accountLogout">
+                        id="logoutButton">
 
-                        Se déconnecter
+                        Déconnexion
 
                     </button>
 
                 </div>
 
             </div>
-
         `;
 
 
@@ -398,15 +247,13 @@
                 "profileButton"
             );
 
-
         const accountMenu =
             document.getElementById(
                 "accountMenu"
             );
 
 
-        profileButton.addEventListener(
-            "click",
+        profileButton.onclick =
             function (event) {
 
                 event.stopPropagation();
@@ -415,8 +262,7 @@
                     "open"
                 );
 
-            }
-        );
+            };
 
 
         document.addEventListener(
@@ -435,36 +281,23 @@
             .getElementById(
                 "logoutButton"
             )
-            .addEventListener(
-                "click",
-                logout
-            );
+            .onclick =
+                logout;
 
     }
 
 
-    /* =================================================
-       UTILITAIRE
-    ================================================= */
-
     function escapeHtml(text) {
 
         const div =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        div.textContent =
-            text;
+        div.textContent = text;
 
         return div.innerHTML;
 
     }
 
-
-    /* =================================================
-       INITIALISATION
-    ================================================= */
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -478,17 +311,12 @@
     );
 
 
-    /* =================================================
-       API PUBLIQUE
-    ================================================= */
-
     window.PamplemoucheAuth = {
 
         getToken,
         isLoggedIn,
         login,
         logout,
-        authenticatedFetch,
         fetchMe
 
     };
