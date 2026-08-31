@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", function () {
+
+document.addEventListener("DOMContentLoaded", async function () {
 
     const account =
         document.getElementById("gamesAccount");
@@ -6,19 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!account) return;
 
 
-    /*
-     * L'utilisateur est censé être connecté.
-     */
-
     const token =
         PamplemoucheAuth.getToken();
 
     if (!token) {
-
-        /*
-         * Sécurité : si quelqu'un arrive
-         * directement sur games.html.
-         */
 
         window.location.href = "/";
 
@@ -28,19 +20,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /*
-     * HTML du compte
+     * Affichage immédiat
      */
 
     account.innerHTML = `
 
         <div class="gamesAccount">
 
-            <div class="pampBalance">
+            <div
+                id="pampBalance"
+                class="pampBalance">
 
-                🟡
-                <span id="pampAmount">
-                    …
-                </span>
+                🟡 …
 
             </div>
 
@@ -49,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 id="profileButton"
                 class="profileButton">
 
-                P
+                ?
 
             </button>
 
@@ -62,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     id="accountName"
                     class="accountName">
 
-                    Compte
+                    Chargement…
 
                 </div>
 
@@ -92,27 +83,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /*
-     * Menu du compte
+     * Menu
      */
 
-    const profile =
+    const profileButton =
         document.getElementById(
             "profileButton"
         );
 
-    const menu =
+    const accountMenu =
         document.getElementById(
             "accountMenu"
         );
 
 
-    profile.addEventListener(
+    profileButton.addEventListener(
         "click",
         function (event) {
 
             event.stopPropagation();
 
-            menu.classList.toggle("open");
+            accountMenu.classList.toggle(
+                "open"
+            );
 
         }
     );
@@ -122,7 +115,9 @@ document.addEventListener("DOMContentLoaded", function () {
         "click",
         function () {
 
-            menu.classList.remove("open");
+            accountMenu.classList.remove(
+                "open"
+            );
 
         }
     );
@@ -143,34 +138,77 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /*
-     * Récupération du compte
+     * Récupération du compte directement
+     * depuis Arc Pamplemouche
      */
-
-    loadAccount();
-
-});
-
-
-async function loadAccount() {
 
     try {
 
-        const user =
-            await PamplemoucheAuth.fetchMe();
+        const response =
+            await fetch(
+                "https://arc.pamplemouche.com/api/me",
+                {
 
-        if (!user) return;
+                    method:
+                        "GET",
 
+                    headers: {
+
+                        "Authorization":
+                            "Bearer " +
+                            token
+
+                    }
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Arc API : HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.ok) {
+
+            throw new Error(
+                "Session invalide"
+            );
+
+        }
+
+
+        /*
+         * ================================
+         * PSEUDO
+         * ================================
+         */
 
         const username =
-            user.username ||
-            user.pseudo ||
-            user.name ||
+            data.username ||
             "Pamplemouche";
 
 
-        const initial =
+        const cleanUsername =
             username
-                .trim()
+                .replace(
+                    /\s*\(ADM🛡️?\)\s*$/u,
+                    ""
+                )
+                .trim();
+
+
+        const initial =
+            cleanUsername
                 .charAt(0)
                 .toUpperCase();
 
@@ -188,58 +226,79 @@ async function loadAccount() {
                 "accountName"
             )
             .textContent =
-                username;
+                cleanUsername;
 
 
         /*
-         * Si le solde est fourni par l'API,
-         * on l'affiche.
+         * ================================
+         * PAMP
+         * ================================
          */
 
         const pamp =
-            user.pamp ??
-            user.pamps ??
-            user.balance;
+            Number(
+                data.pamp ?? 0
+            );
 
 
-        if (
-            pamp !== undefined &&
-            pamp !== null
-        ) {
-
-            const value =
-                Number(pamp)
-                    .toLocaleString("fr-FR");
+        const formattedPamp =
+            pamp.toLocaleString(
+                "fr-FR"
+            );
 
 
-            document
-                .getElementById(
-                    "pampAmount"
-                )
-                .textContent =
-                    value;
+        document
+            .getElementById(
+                "pampBalance"
+            )
+            .textContent =
+                "🟡 " +
+                formattedPamp;
 
 
-            document
-                .getElementById(
-                    "menuPamp"
-                )
-                .textContent =
-                    "🟡 " +
-                    value +
-                    " PAMP";
+        document
+            .getElementById(
+                "menuPamp"
+            )
+            .textContent =
+                "🟡 " +
+                formattedPamp +
+                " PAMP";
 
-        }
 
     }
 
     catch (error) {
 
         console.error(
-            "Impossible de charger le compte:",
+            "Impossible de récupérer le compte Arc :",
             error
         );
 
+
+        document
+            .getElementById(
+                "pampBalance"
+            )
+            .textContent =
+                "🟡 —";
+
+
+        document
+            .getElementById(
+                "profileButton"
+            )
+            .textContent =
+                "?";
+
+
+        document
+            .getElementById(
+                "accountName"
+            )
+            .textContent =
+                "Compte indisponible";
+
     }
 
-}
+});
