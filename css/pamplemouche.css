@@ -1349,3 +1349,176 @@ select {
     }
 
 }
+/* =====================================================
+   COMPTE GAMES
+===================================================== */
+
+.gamesAccount {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* Solde Pamp */
+
+.pampBalance {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 7px 11px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    color: white;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+/* Rond du profil */
+
+.profileButton {
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    color: white;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        background 0.15s ease,
+        transform 0.15s ease;
+}
+
+
+.profileButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+
+/* Menu */
+
+.accountMenu {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 210px;
+
+    padding: 14px;
+
+    border-radius: 14px;
+
+    background: rgba(25, 25, 30, 0.97);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.35);
+
+    backdrop-filter: blur(14px);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translateY(-5px);
+
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease,
+        visibility 0.15s ease;
+
+    z-index: 1000;
+}
+
+
+.accountMenu.open {
+    opacity: 1;
+    visibility: visible;
+
+    transform: translateY(0);
+}
+
+
+/* Nom */
+
+.accountName {
+    color: white;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    padding: 4px 4px 10px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* Pamp dans le menu */
+
+.accountPamp {
+    color: rgba(255, 255, 255, 0.75);
+
+    font-size: 14px;
+
+    padding: 11px 4px;
+}
+
+
+/* Déconnexion */
+
+.accountLogout {
+    width: 100%;
+
+    padding: 9px 10px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: rgba(255, 255, 255, 0.07);
+
+    color: white;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        background 0.15s ease;
+}
+
+
+.accountLogout:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
