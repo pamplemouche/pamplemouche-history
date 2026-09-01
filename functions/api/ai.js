@@ -46,7 +46,8 @@ export async function onRequestPost(context) {
                 encodeURIComponent(apiKey),
                 {
 
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
 
@@ -62,12 +63,14 @@ export async function onRequestPost(context) {
 
                                 {
 
-                                    role: "user",
+                                    role:
+                                        "user",
 
                                     parts: [
 
                                         {
-                                            text: prompt
+                                            text:
+                                                prompt
                                         }
 
                                     ]
@@ -78,9 +81,14 @@ export async function onRequestPost(context) {
 
                             generationConfig: {
 
-                                temperature: 0.7,
+                                temperature:
+                                    0.7,
 
-                                maxOutputTokens: 4096
+                                maxOutputTokens:
+                                    4096,
+
+                                responseMimeType:
+                                    "application/json"
 
                             }
 
@@ -106,6 +114,7 @@ export async function onRequestPost(context) {
                 {
                     error:
                         "Gemini a renvoyé une erreur.",
+
                     details:
                         data
                 },
@@ -118,14 +127,114 @@ export async function onRequestPost(context) {
         }
 
 
-        const message =
+        const rawText =
             extractGeminiText(data);
+
+
+        /*
+         * Gemini doit maintenant répondre
+         * en JSON.
+         */
+
+        let result;
+
+
+        try {
+
+            result =
+                JSON.parse(
+                    cleanJson(rawText)
+                );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Réponse Gemini invalide:",
+                rawText
+            );
+
+
+            return Response.json(
+                {
+                    error:
+                        "Gemini a fourni une réponse invalide."
+                },
+                {
+                    status: 500
+                }
+            );
+
+        }
+
+
+        /*
+         * =====================================================
+         * DISCUSSION
+         * =====================================================
+         */
+
+        if (
+            body.type ===
+            "discussion"
+        ) {
+
+            return Response.json({
+
+                message:
+                    result.message ||
+                    "Aucune réponse.",
+
+                events:
+                    result.events ||
+                    []
+
+            });
+
+        }
+
+
+        /*
+         * =====================================================
+         * SIMULATION
+         * =====================================================
+         */
+
+        if (
+            body.type ===
+            "simulation"
+        ) {
+
+            return Response.json({
+
+                message:
+                    result.message ||
+                    "La simulation est terminée.",
+
+                events:
+                    Array.isArray(
+                        result.events
+                    )
+                        ? result.events
+                        : [],
+
+                changes:
+                    result.changes &&
+                    typeof result.changes === "object"
+                        ? result.changes
+                        : {}
+
+            });
+
+        }
 
 
         return Response.json({
 
             message:
-                message
+                result.message ||
+                "Requête traitée."
 
         });
 
@@ -155,10 +264,17 @@ export async function onRequestPost(context) {
 
 
 /* =========================================================
-   PROMPT
+   PROMPTS
 ========================================================= */
 
 function buildPrompt(body) {
+
+
+    /*
+     * =====================================================
+     * DISCUSSION
+     * =====================================================
+     */
 
     if (
         body.type ===
@@ -188,6 +304,11 @@ ${JSON.stringify(
 QUESTION DU JOUEUR :
 ${body.message || ""}
 
+
+=====================================================
+RÈGLES
+=====================================================
+
 Réponds naturellement en français.
 
 Tu peux expliquer :
@@ -196,8 +317,8 @@ Tu peux expliquer :
 - son économie ;
 - son armée ;
 - sa diplomatie ;
-- ses relations avec les autres pays ;
-- les événements actuels ;
+- ses relations ;
+- les événements ;
 - les conséquences possibles d'une décision.
 
 IMPORTANT :
@@ -206,10 +327,30 @@ Cette requête est uniquement une discussion.
 
 NE MODIFIE PAS l'état du monde.
 
+
+=====================================================
+FORMAT OBLIGATOIRE
+=====================================================
+
+Réponds UNIQUEMENT avec un objet JSON valide :
+
+{
+    "message": "ta réponse en français",
+    "events": []
+}
+
+Ne mets aucun texte avant ou après le JSON.
+
 `;
 
     }
 
+
+    /*
+     * =====================================================
+     * SIMULATION
+     * =====================================================
+     */
 
     if (
         body.type ===
@@ -224,6 +365,11 @@ de Pamplemouche History.
 Tu dois simuler l'évolution du monde
 entre deux dates.
 
+
+=====================================================
+TEMPS
+=====================================================
+
 DATE DE DÉPART :
 ${body.dateStart}
 
@@ -234,17 +380,33 @@ DURÉE :
 ${body.duration?.amount || 0}
 ${body.duration?.unit || ""}
 
+
+=====================================================
+JOUEUR
+=====================================================
+
 PAYS DU JOUEUR :
 ${body.selectedCountry || "aucun"}
 
-ACTIONS DU JOUEUR :
+
+=====================================================
+ACTIONS
+=====================================================
+
+Les actions suivantes ont été préparées
+par le joueur :
+
 ${JSON.stringify(
     body.actions || [],
     null,
     2
 )}
 
-ÉTAT INITIAL DU MONDE :
+
+=====================================================
+ÉTAT INITIAL DU MONDE
+=====================================================
+
 ${JSON.stringify(
     body.worldState || {},
     null,
@@ -258,59 +420,145 @@ RÈGLES DE SIMULATION
 
 Simule toute la période.
 
-Les actions du joueur doivent avoir
-des conséquences réalistes.
+IMPORTANT :
 
-Mais tu dois également simuler
-ce qui se passe indépendamment du joueur.
+Les actions du joueur ne sont PAS instantanées.
 
-Le monde ne doit PAS rester immobile.
+Tiens compte de la durée disponible.
 
-Les autres pays doivent pouvoir :
+Une action complexe peut prendre plusieurs
+jours, semaines ou mois.
 
-- déclarer des guerres ;
-- signer des traités ;
+Simule également l'évolution normale du monde
+indépendamment des actions du joueur.
+
+Le monde doit continuer à évoluer.
+
+Les autres pays peuvent notamment :
+
 - améliorer ou détériorer leurs relations ;
-- construire des infrastructures ;
+- signer des accords ;
+- déclarer des guerres ;
+- conclure des paix ;
+- mobiliser leurs forces ;
 - développer leur économie ;
-- produire des équipements ;
-- mobiliser leurs armées ;
-- changer de gouvernement ;
-- prendre des décisions diplomatiques ;
-- subir des événements ;
-- réagir aux actions du joueur.
+- construire des infrastructures ;
+- produire du matériel ;
+- changer leur politique ;
+- réagir aux actions du joueur ;
+- subir des événements cohérents.
 
-Les conséquences doivent être cohérentes
-avec la durée de la simulation.
 
-Une action prenant plusieurs mois
-ne doit pas être instantanée.
+=====================================================
+TERRITOIRES
+=====================================================
 
-Les changements territoriaux doivent être
-réalistes et cohérents avec les événements.
+L'état du monde utilise des territoires.
+
+Chaque territoire possède notamment :
+
+{
+    "owner": "Nom du pays"
+}
+
+Pour une annexion, NE SUPPRIME PAS le territoire.
+
+Modifie simplement son propriétaire.
+
+Exemple :
+
+Belgium :
+
+{
+    "owner": "France"
+}
+
+Cela signifie que la Belgique est désormais
+contrôlée par la France.
+
+Le territoire doit conserver son existence
+géographique afin que la carte puisse le colorer
+avec le propriétaire actuel.
+
+
+=====================================================
+IMPORTANT : CHANGEMENTS UNIQUEMENT
+=====================================================
+
+Tu NE DOIS PAS renvoyer tout le worldState.
+
+Renvoie uniquement les territoires dont
+le propriétaire ou un autre élément pertinent
+a changé pendant la simulation.
+
+Exemple :
+
+"changes": {
+    "Belgium": {
+        "owner": "France"
+    }
+}
+
+Si aucun territoire n'a changé :
+
+"changes": {}
+
+
+=====================================================
+COHÉRENCE
+=====================================================
+
+Ne crée pas de pays inexistants.
+
+Ne modifie pas arbitrairement des territoires.
+
+Ne prétends pas qu'une guerre ou une annexion
+est terminée si la durée simulée ne le permet
+pas raisonnablement.
+
+Les événements doivent être cohérents avec
+l'état initial du monde.
+
+Le temps doit également continuer à s'écouler
+normalement en dehors des actions du joueur.
 
 
 =====================================================
 RÉSULTAT
 =====================================================
 
-Pour l'instant, retourne principalement
-un compte-rendu clair de ce qui s'est passé
-pendant la période.
+Retourne un résumé clair en français.
 
-Explique notamment :
+Le résumé doit expliquer :
 
-- les principales actions du joueur ;
+- ce que les actions du joueur ont provoqué ;
 - les réactions des autres pays ;
-- les guerres ;
-- la diplomatie ;
-- l'économie ;
+- les événements importants ;
+- les changements diplomatiques ;
 - les changements territoriaux ;
-- les événements importants.
+- les conséquences importantes.
 
-Ne prétends pas qu'un événement a eu lieu
-s'il n'est pas cohérent avec l'état initial
-du monde.
+
+=====================================================
+FORMAT OBLIGATOIRE
+=====================================================
+
+Réponds UNIQUEMENT avec un JSON valide :
+
+{
+    "message": "résumé de la simulation",
+    "events": [
+        "événement 1",
+        "événement 2"
+    ],
+    "changes": {
+        "Nom du territoire": {
+            "owner": "Nouveau propriétaire"
+        }
+    }
+}
+
+Ne mets aucun texte avant ou après le JSON.
 
 `;
 
@@ -321,8 +569,16 @@ du monde.
 
 Requête inconnue.
 
-Type reçu :
+Type :
 ${body.type || "aucun"}
+
+Réponds avec :
+
+{
+    "message": "Type de requête inconnu.",
+    "events": [],
+    "changes": {}
+}
 
 `;
 
@@ -330,7 +586,7 @@ ${body.type || "aucun"}
 
 
 /* =========================================================
-   EXTRACTION GEMINI
+   GEMINI TEXT
 ========================================================= */
 
 function extractGeminiText(data) {
@@ -341,7 +597,7 @@ function extractGeminiText(data) {
         !data.candidates.length
     ) {
 
-        return "Gemini n'a fourni aucune réponse.";
+        return "";
 
     }
 
@@ -355,22 +611,66 @@ function extractGeminiText(data) {
         !candidate.content.parts
     ) {
 
-        return "Gemini n'a fourni aucun texte.";
+        return "";
 
     }
 
 
     return candidate.content.parts
+
         .filter(
             part =>
                 typeof part.text ===
                 "string"
         )
+
         .map(
             part =>
                 part.text
         )
+
         .join("\n")
+
         .trim();
+
+}
+
+
+/* =========================================================
+   NETTOYAGE JSON
+========================================================= */
+
+function cleanJson(text) {
+
+    let result =
+        String(text || "")
+            .trim();
+
+
+    /*
+     * Au cas où Gemini entoure malgré tout
+     * le JSON avec ```json ... ```
+     */
+
+    if (
+        result.startsWith("```")
+    ) {
+
+        result =
+            result
+                .replace(
+                    /^```(?:json)?\s*/i,
+                    ""
+                )
+                .replace(
+                    /\s*```$/,
+                    ""
+                )
+                .trim();
+
+    }
+
+
+    return result;
 
 }
