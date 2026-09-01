@@ -802,20 +802,85 @@ async function askAI(
 
     try {
 
-        const token =
-            window.PamplemoucheAuth &&
-            PamplemoucheAuth.getToken
-                ? PamplemoucheAuth.getToken()
-                : null;
+    const token =
+        PamplemoucheAuth.getToken();
 
+    const headers = {
+        "Content-Type": "application/json"
+    };
 
-        const headers = {
+    if (token) {
+        headers.Authorization =
+            "Bearer " + token;
+    }
 
-            "Content-Type":
-                "application/json"
+    const response =
+        await fetch(
+            "/api/ai",
+            {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(payload)
+            }
+        );
 
-        };
+    const raw =
+        await response.text();
 
+    let data;
+
+    try {
+        data = JSON.parse(raw);
+    }
+
+    catch {
+
+        throw new Error(
+            "HTTP " +
+            response.status +
+            " : " +
+            raw
+        );
+
+    }
+
+    if (!response.ok) {
+
+        throw new Error(
+            "HTTP " +
+            response.status +
+            " : " +
+            (
+                data.error ||
+                raw
+            )
+        );
+
+    }
+
+    loading.textContent =
+        data.message ||
+        "Aucune réponse.";
+
+}
+
+catch (error) {
+
+    loading.textContent =
+        "❌ " +
+        (
+            error.message ||
+            "Erreur inconnue"
+        );
+
+    console.error(
+        "Erreur IA :",
+        error
+    );
+
+}
+
+scrollMessages();
 
         if (token) {
 
