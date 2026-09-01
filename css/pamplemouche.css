@@ -683,7 +683,7 @@ select {
 }
 
 
-.countryName {
+.country-label {
     font-size: 2px;
     font-weight: 600;
     text-anchor: middle;
@@ -700,7 +700,7 @@ select {
 }
 
 
-.countryName.small {
+.country-label.small {
 
     font-size: 2px;
 
