@@ -684,7 +684,7 @@ select {
 
 
 .countryName {
-    font-size: 9px;
+    font-size: 2px;
     font-weight: 600;
     text-anchor: middle;
     dominant-baseline: middle;
@@ -702,7 +702,7 @@ select {
 
 .countryName.small {
 
-    font-size: 6px;
+    font-size: 2px;
 
 }
 
