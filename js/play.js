@@ -89,6 +89,8 @@ document.addEventListener(
 
         initializeControls();
 
+        updateDateDisplay();
+
     }
 );
 
@@ -115,20 +117,20 @@ function initializeMap() {
 
     const projection =
         d3.geoNaturalEarth1()
-          .scale(
-              width / 5.8
-          )
-          .translate([
-              width / 2,
-              height / 2
-          ]);
+            .scale(
+                width / 5.8
+            )
+            .translate([
+                width / 2,
+                height / 2
+            ]);
 
 
     const path =
         d3.geoPath()
-          .projection(
-              projection
-          );
+            .projection(
+                projection
+            );
 
 
     mapGroup =
@@ -139,21 +141,21 @@ function initializeMap() {
 
     const zoom =
         d3.zoom()
-          .scaleExtent([
-              1,
-              10
-          ])
-          .on(
-              "zoom",
-              event => {
+            .scaleExtent([
+                1,
+                10
+            ])
+            .on(
+                "zoom",
+                event => {
 
-                  mapGroup.attr(
-                      "transform",
-                      event.transform
-                  );
+                    mapGroup.attr(
+                        "transform",
+                        event.transform
+                    );
 
-              }
-          );
+                }
+            );
 
 
     svg.call(
@@ -161,86 +163,81 @@ function initializeMap() {
     );
 
 
-    /*
-        World Atlas.
-
-        Cela donne les territoires
-        géographiques de base.
-    */
-
     d3.json(
         "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
     )
-    .then(
-        world => {
 
-            const features =
-                topojson.feature(
-                    world,
-                    world.objects.countries
-                ).features;
+        .then(
+            world => {
 
-
-            territories =
-                features.map(
-                    feature => {
-
-                        const name =
-                            feature.properties.name ||
-                            "Territoire " +
-                            feature.id;
+                const features =
+                    topojson.feature(
+                        world,
+                        world.objects.countries
+                    ).features;
 
 
-                        worldState[name] = {
+                territories =
+                    features.map(
+                        feature => {
 
-                            id:
-                                feature.id,
-
-                            name:
-                                name,
-
-                            owner:
-                                name
-
-                        };
+                            const name =
+                                feature.properties.name ||
+                                "Territoire " +
+                                feature.id;
 
 
-                        return {
+                            worldState[name] = {
 
-                            id:
-                                feature.id,
+                                id:
+                                    feature.id,
 
-                            name:
-                                name,
+                                name:
+                                    name,
 
-                            owner:
-                                name,
+                                owner:
+                                    name
 
-                            geometry:
-                                feature
+                            };
 
-                        };
 
-                    }
+                            return {
+
+                                id:
+                                    feature.id,
+
+                                name:
+                                    name,
+
+                                owner:
+                                    name,
+
+                                geometry:
+                                    feature
+
+                            };
+
+                        }
+                    );
+
+
+                drawMap(
+                    path
                 );
 
+            }
+        )
 
-            drawMap(
-                path
-            );
+        .catch(
+            error => {
 
-        }
-    )
-    .catch(
-        error => {
+                console.error(
+                    "Impossible de charger la carte:",
+                    error
+                );
 
-            console.error(
-                "Impossible de charger la carte:",
-                error
-            );
-
-        }
-    );
+            }
+        );
 
 }
 
@@ -252,20 +249,26 @@ function initializeMap() {
 function drawMap(path) {
 
     mapGroup
+
         .selectAll(
             ".country"
         )
+
         .data(
             territories
         )
+
         .enter()
+
         .append(
             "path"
         )
+
         .attr(
             "class",
             "country"
         )
+
         .attr(
             "d",
             d =>
@@ -273,6 +276,7 @@ function drawMap(path) {
                     d.geometry
                 )
         )
+
         .attr(
             "fill",
             d =>
@@ -280,6 +284,7 @@ function drawMap(path) {
                     d.owner
                 )
         )
+
         .on(
             "click",
             function(event, d) {
@@ -294,42 +299,54 @@ function drawMap(path) {
 
 
     mapGroup
+
         .selectAll(
             ".country-label"
         )
+
         .data(
             territories
         )
+
         .enter()
+
         .append(
             "text"
         )
+
         .attr(
             "class",
             "country-label"
         )
+
         .attr(
             "x",
-            d =>
-                path.centroid(
-                    d.geometry
-                )[0]
+            d => {
+
+                const center =
+                    path.centroid(
+                        d.geometry
+                    );
+
+                return center[0];
+
+            }
         )
+
         .attr(
             "y",
-            d =>
-                path.centroid(
-                    d.geometry
-                )[1]
+            d => {
+
+                const center =
+                    path.centroid(
+                        d.geometry
+                    );
+
+                return center[1];
+
+            }
         )
-        .attr(
-    "font-size",
-    d =>
-        getLabelFontSize(
-            d,
-            path
-        ) + "px"
-)
+
         .text(
             d =>
                 d.name
@@ -354,10 +371,10 @@ function selectCountry(
         d3.select(
             selectedCountryElement
         )
-        .classed(
-            "selected",
-            false
-        );
+            .classed(
+                "selected",
+                false
+            );
 
     }
 
@@ -366,7 +383,9 @@ function selectCountry(
         element;
 
 
-    d3.select(element)
+    d3.select(
+        element
+    )
         .classed(
             "selected",
             true
@@ -704,10 +723,10 @@ function sendMessage() {
 
 
     /*
-        ACTION :
-
-        surtout pas d'appel IA.
-    */
+     * ACTION :
+     *
+     * Aucun appel IA.
+     */
 
     if (
         panelMode === "actions"
@@ -726,10 +745,10 @@ function sendMessage() {
 
 
     /*
-        DISCUSSION :
-
-        appel API.
-    */
+     * DISCUSSION :
+     *
+     * Appel IA immédiat.
+     */
 
     addUserMessage(
         text
@@ -762,7 +781,9 @@ function sendMessage() {
    AI
 ===================================================== */
 
-async function askAI(payload) {
+async function askAI(
+    payload
+) {
 
     addAiMessage(
         "..."
@@ -782,7 +803,10 @@ async function askAI(payload) {
     try {
 
         const token =
-            PamplemoucheAuth.getToken();
+            window.PamplemoucheAuth &&
+            PamplemoucheAuth.getToken
+                ? PamplemoucheAuth.getToken()
+                : null;
 
 
         const headers = {
@@ -811,7 +835,6 @@ async function askAI(payload) {
                         "POST",
 
                     headers:
-
                         headers,
 
                     body:
@@ -1027,13 +1050,33 @@ async function advanceTime(
     unit
 ) {
 
-    document
-        .getElementById(
+    /*
+     * Empêche plusieurs simulations
+     * simultanées.
+     */
+
+    if (
+        window.historySimulationRunning
+    ) {
+
+        return;
+
+    }
+
+
+    window.historySimulationRunning =
+        true;
+
+
+    const timeMenu =
+        document.getElementById(
             "timeMenu"
-        )
-        .classList.remove(
-            "open"
         );
+
+
+    timeMenu.classList.remove(
+        "open"
+    );
 
 
     const oldDate =
@@ -1047,8 +1090,8 @@ async function advanceTime(
 
 
     /*
-        Date locale du prototype.
-    */
+     * Avance immédiatement la date.
+     */
 
     applyTimeToDate(
         currentDate,
@@ -1061,119 +1104,462 @@ async function advanceTime(
 
 
     /*
-        Maintenant seulement,
-        les actions sont envoyées à l'IA.
-    */
+     * Même sans action, le monde doit
+     * pouvoir continuer à évoluer.
+     *
+     * On fait donc TOUJOURS une simulation.
+     */
 
-    if (
-        actions.length > 0
-    ) {
-
-        const token =
-            PamplemoucheAuth.getToken();
-
-
-        try {
-
-            const headers = {
-
-                "Content-Type":
-                    "application/json"
-
-            };
+    const token =
+        window.PamplemoucheAuth &&
+        PamplemoucheAuth.getToken
+            ? PamplemoucheAuth.getToken()
+            : null;
 
 
-            if (token) {
+    const headers = {
 
-                headers.Authorization =
-                    "Bearer " +
-                    token;
+        "Content-Type":
+            "application/json"
 
-            }
-
-
-            const response =
-                await fetch(
-                    "/api/ai",
-                    {
-
-                        method:
-                            "POST",
-
-                        headers:
-                            headers,
-
-                        body:
-                            JSON.stringify({
-
-                                type:
-                                    "simulation",
-
-                                dateStart:
-                                    oldDate.toISOString(),
-
-                                dateEnd:
-                                    currentDate.toISOString(),
-
-                                duration: {
-
-                                    amount:
-                                        amount,
-
-                                    unit:
-                                        unit
-
-                                },
-
-                                actions:
-                                    actions,
-
-                                selectedCountry:
-                                    selectedCountry,
-
-                                worldState:
-                                    worldState
-
-                            })
-
-                    }
-                );
+    };
 
 
-            const result =
-                await response.json();
+    if (token) {
+
+        headers.Authorization =
+            "Bearer " +
+            token;
+
+    }
 
 
-            if (
-                response.ok &&
-                result.worldState
-            ) {
+    /*
+     * Petit indicateur dans le bouton Temps.
+     */
 
-                applyWorldState(
-                    result.worldState
-                );
+    const timeButton =
+        document.getElementById(
+            "timeButton"
+        );
 
-            }
 
+    const originalText =
+        timeButton.textContent;
+
+
+    timeButton.textContent =
+        "⏳ Simulation...";
+
+
+    timeButton.disabled =
+        true;
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/ai",
+                {
+
+                    method:
+                        "POST",
+
+                    headers:
+                        headers,
+
+                    body:
+                        JSON.stringify({
+
+                            type:
+                                "simulation",
+
+                            dateStart:
+                                oldDate.toISOString(),
+
+                            dateEnd:
+                                currentDate.toISOString(),
+
+                            duration: {
+
+                                amount:
+                                    amount,
+
+                                unit:
+                                    unit
+
+                            },
+
+                            actions:
+                                actions,
+
+                            selectedCountry:
+                                selectedCountry,
+
+                            worldState:
+                                worldState
+
+                        })
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                result.error ||
+                "Erreur de simulation"
+            );
 
         }
 
-        catch (error) {
 
-            console.error(
-                "Erreur simulation:",
-                error
+        /*
+         * =================================================
+         * CHANGEMENTS DU MONDE
+         * =================================================
+         */
+
+        if (
+            result.changes &&
+            typeof result.changes === "object"
+        ) {
+
+            applyWorldChanges(
+                result.changes
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * COMPTE-RENDU
+         * =================================================
+         */
+
+        if (
+            result.message
+        ) {
+
+            addSimulationMessage(
+                result.message
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * ÉVÉNEMENTS
+         * =================================================
+         */
+
+        if (
+            Array.isArray(
+                result.events
+            )
+        ) {
+
+            result.events.forEach(
+                event => {
+
+                    if (
+                        event
+                    ) {
+
+                        addSimulationMessage(
+                            event
+                        );
+
+                    }
+
+                }
             );
 
         }
 
     }
 
+    catch (error) {
 
-    pendingActions = [];
+        console.error(
+            "Erreur simulation:",
+            error
+        );
 
 
-    renderActions();
+        /*
+         * Si l'IA échoue, on garde quand même
+         * la nouvelle date.
+         */
+
+        addSimulationMessage(
+            "La période a été avancée, mais la simulation IA n'a pas pu être effectuée."
+        );
+
+    }
+
+    finally {
+
+        /*
+         * Les actions ont été consommées
+         * après l'avance du temps.
+         */
+
+        pendingActions = [];
+
+
+        renderActions();
+
+
+        timeButton.textContent =
+            originalText;
+
+
+        timeButton.disabled =
+            false;
+
+
+        window.historySimulationRunning =
+            false;
+
+    }
+
+}
+
+
+/* =====================================================
+   APPLY WORLD CHANGES
+===================================================== */
+
+function applyWorldChanges(
+    changes
+) {
+
+    if (
+        !changes ||
+        typeof changes !== "object"
+    ) {
+
+        return;
+
+    }
+
+
+    Object.entries(
+        changes
+    ).forEach(
+        ([territoryName, change]) => {
+
+            if (
+                !change ||
+                typeof change !== "object"
+            ) {
+
+                return;
+
+            }
+
+
+            const territory =
+                territories.find(
+                    territory =>
+                        territory.name ===
+                        territoryName
+                );
+
+
+            if (!territory) {
+
+                console.warn(
+                    "Territoire inconnu retourné par l'IA:",
+                    territoryName
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * Nouveau propriétaire
+             */
+
+            if (
+                typeof change.owner ===
+                "string" &&
+                change.owner.trim()
+            ) {
+
+                territory.owner =
+                    change.owner.trim();
+
+            }
+
+
+            /*
+             * Mise à jour de worldState
+             */
+
+            if (
+                !worldState[
+                    territoryName
+                ]
+            ) {
+
+                worldState[
+                    territoryName
+                ] = {
+
+                    id:
+                        territory.id,
+
+                    name:
+                        territory.name,
+
+                    owner:
+                        territory.owner
+
+                };
+
+            }
+
+            else {
+
+                worldState[
+                    territoryName
+                ].owner =
+                    territory.owner;
+
+            }
+
+        }
+    );
+
+
+    /*
+     * =================================================
+     * COULEURS
+     * =================================================
+     */
+
+    mapGroup
+
+        .selectAll(
+            ".country"
+        )
+
+        .attr(
+            "fill",
+            d =>
+                getCountryColor(
+                    d.owner
+                )
+        );
+
+
+    /*
+     * =================================================
+     * INFOS DU PAYS SÉLECTIONNÉ
+     * =================================================
+     */
+
+    if (
+        selectedCountry
+    ) {
+
+        const territory =
+            territories.find(
+                territory =>
+                    territory.name ===
+                    selectedCountry
+            );
+
+
+        if (territory) {
+
+            document
+                .getElementById(
+                    "countryInfo"
+                )
+                .textContent =
+                    "Contrôlé par " +
+                    territory.owner +
+                    ".";
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   SIMULATION MESSAGE
+===================================================== */
+
+function addSimulationMessage(
+    text
+) {
+
+    const messages =
+        document.getElementById(
+            "messages"
+        );
+
+
+    /*
+     * Ouvre automatiquement le panneau
+     * Discussion pour afficher le résultat.
+     */
+
+    const panel =
+        document.getElementById(
+            "aiPanel"
+        );
+
+
+    panel.classList.add(
+        "open"
+    );
+
+
+    panelMode =
+        "discussion";
+
+
+    document
+        .getElementById(
+            "aiTitle"
+        )
+        .textContent =
+            "Simulation";
+
+
+    messages.style.display =
+        "block";
+
+
+    document
+        .getElementById(
+            "actionsList"
+        )
+        .style.display =
+            "none";
+
+
+    addAiMessage(
+        text
+    );
 
 }
 
@@ -1185,6 +1571,16 @@ async function advanceTime(
 function applyWorldState(
     newState
 ) {
+
+    if (
+        !newState ||
+        typeof newState !== "object"
+    ) {
+
+        return;
+
+    }
+
 
     worldState =
         newState;
@@ -1211,14 +1607,12 @@ function applyWorldState(
     );
 
 
-    /*
-        Met à jour les couleurs.
-    */
-
     mapGroup
+
         .selectAll(
             ".country"
         )
+
         .attr(
             "fill",
             d =>
@@ -1226,7 +1620,6 @@ function applyWorldState(
                     d.owner
                 )
         );
-
 
 }
 
@@ -1252,7 +1645,6 @@ function applyTimeToDate(
 
     }
 
-
     else if (
         unit === "weeks"
     ) {
@@ -1264,7 +1656,6 @@ function applyTimeToDate(
 
     }
 
-
     else if (
         unit === "months"
     ) {
@@ -1275,7 +1666,6 @@ function applyTimeToDate(
         );
 
     }
-
 
     else if (
         unit === "years"
@@ -1450,14 +1840,17 @@ function annexTerritory(
 
 
     mapGroup
+
         .selectAll(
             ".country"
         )
+
         .filter(
             d =>
                 d.name ===
                 territoryName
         )
+
         .attr(
             "fill",
             d =>
@@ -1489,29 +1882,4 @@ function escapeHtml(
 
     return div.innerHTML;
 
-}
-function getLabelFontSize(d, path) {
-
-    const bounds =
-        path.bounds(d.geometry);
-
-    const width =
-        bounds[1][0] -
-        bounds[0][0];
-
-    const height =
-        bounds[1][1] -
-        bounds[0][1];
-
-    const size =
-        Math.min(
-            width / (d.name.length * 0.65),
-            height * 0.35,
-            14
-        );
-
-    return Math.max(
-        4,
-        size
-    );
 }
