@@ -819,7 +819,7 @@ async function askAI(payload) {
 
         const response =
             await fetch(
-                "/api/ai",
+                "./api/ai.js",
                 {
 
                     method:
