@@ -32,7 +32,7 @@ export async function onRequestPost(context) {
          */
 
         const endpoint =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent";
 
 
         const prompt =
