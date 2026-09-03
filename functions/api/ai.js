@@ -1,16 +1,18 @@
 /* =========================================================
-   HANDLER UNIQUE (INTERCEPTE TOUTES LES REQUÊTES)
+   FUNCTIONS/API/AI.JS - COMPATIBLE GEMINI 3.8 FLASH
 ========================================================= */
 
 export async function onRequest(context) {
+    // Configuration universelle des en-têtes CORS
     const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "86400",
         "Content-Type": "application/json"
     };
 
-    // 1. Gestion du Preflight CORS (browser OPTIONS)
+    // 1. Prise en charge des requêtes Preflight (OPTIONS) envoyées par les navigateurs
     if (context.request.method === "OPTIONS") {
         return new Response(null, {
             status: 204,
@@ -18,29 +20,31 @@ export async function onRequest(context) {
         });
     }
 
-    // 2. Refus clair si ce n'est pas un POST (si le front fait un GET par erreur)
+    // 2. Vérification que la méthode utilisée est bien POST
     if (context.request.method !== "POST") {
         return new Response(
-            JSON.stringify({ error: `Méthode ${context.request.method} non autorisée. Utilisez POST.` }),
+            JSON.stringify({ 
+                error: `Méthode ${context.request.method} non autorisée. Veuillez soumettre une requête POST.` 
+            }),
             { status: 405, headers: corsHeaders }
         );
     }
 
-    // 3. Traitement de la requête POST
+    // 3. Traitement de la requête
     try {
         const body = await context.request.json();
         const apiKey = context.env.AI_API_KEY;
 
         if (!apiKey) {
             return Response.json(
-                { error: "AI_API_KEY n'est pas configurée sur Cloudflare." },
+                { error: "La variable d'environnement AI_API_KEY n'est pas configurée sur Cloudflare." },
                 { status: 500, headers: corsHeaders }
             );
         }
 
         /*
          * =====================================================
-         * ENDPOINT GEMINI 3.8 FLASH
+         * APPEL API GEMINI 3.8 FLASH
          * =====================================================
          */
         const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
@@ -76,9 +80,9 @@ export async function onRequest(context) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Gemini API Error Detail:", JSON.stringify(data, null, 2));
+            console.error("Détails Erreur API Gemini:", JSON.stringify(data, null, 2));
             return Response.json(
-                { error: "Gemini a renvoyé une erreur.", details: data },
+                { error: "L'API Gemini a renvoyé une erreur.", details: data },
                 { status: response.status, headers: corsHeaders }
             );
         }
@@ -89,28 +93,28 @@ export async function onRequest(context) {
         try {
             result = JSON.parse(cleanJson(rawText));
         } catch (error) {
-            console.error("Erreur de parsing JSON Gemini:", rawText);
+            console.error("Erreur d'analyse du JSON Gemini:", rawText);
             return Response.json(
-                { error: "Gemini a fourni un format JSON invalide.", raw: rawText },
+                { error: "Gemini a fourni une réponse au format JSON invalide.", raw: rawText },
                 { status: 500, headers: corsHeaders }
             );
         }
 
         /*
          * =====================================================
-         * RETOURS CLIENT
+         * RETOUR AU CLIENT FRONTEND
          * =====================================================
          */
         if (body.type === "discussion") {
             return Response.json({
-                message: result.message || "Aucune réponse.",
+                message: result.message || "Aucune réponse générée.",
                 events: Array.isArray(result.events) ? result.events : []
             }, { headers: corsHeaders });
         }
 
         if (body.type === "simulation") {
             return Response.json({
-                message: result.message || "La simulation est terminée.",
+                message: result.message || "La simulation s'est terminée normalement.",
                 events: Array.isArray(result.events) ? result.events : [],
                 changes: result.changes && typeof result.changes === "object" ? result.changes : {}
             }, { headers: corsHeaders });
@@ -123,24 +127,24 @@ export async function onRequest(context) {
         }, { headers: corsHeaders });
 
     } catch (error) {
-        console.error("AI Function Exception:", error);
+        console.error("Exception dans la Cloudflare Function:", error);
         return Response.json(
-            { error: "Erreur lors de la communication avec le serveur AI." },
+            { error: "Erreur interne lors du traitement de la requête IA." },
             { status: 500, headers: corsHeaders }
         );
     }
 }
 
 /* =========================================================
-   PROMPTS ET SCHÉMAS
+   PROMPTS & SCHÉMAS CONFIG
 ========================================================= */
 
 function buildGeminiConfig(body) {
     if (body.type === "discussion") {
         return {
             systemInstruction: `Tu es l'assistant IA du jeu Pamplemouche History.
-Tu aides le joueur à comprendre le monde sans en modifier l'état.
-Réponds obligatoirement avec un JSON valide respectant le schéma demandé.`,
+Tu aides le joueur à comprendre la situation globale du monde sans modifier son état.
+Réponds obligatoirement avec un objet JSON valide respectant le schéma fourni.`,
             prompt: `
 DATE ACTUELLE : ${body.date || "inconnue"}
 PAYS SÉLECTIONNÉ : ${body.selectedCountry || "aucun"}
@@ -167,11 +171,11 @@ ${body.message || ""}
     if (body.type === "simulation") {
         return {
             systemInstruction: `Tu es le moteur de simulation de Pamplemouche History.
-Tu simules l'évolution du monde entre deux dates.
-Les actions ne sont pas instantanées. Simule aussi les autres pays.
+Tu simules l'évolution globale du monde entre deux dates données.
+Les actions du joueur ne sont pas instantanées. Tu dois également simuler l'évolution autonome des autres nations.
 
-ANNEXIONS ET TERRITOIRES :
-Dans "changes", renvoie uniquement un objet dictionnaire des territoires modifiés.
+MODIFICATIONS DE TERRITOIRES :
+Dans "changes", renvoie exclusivement les territoires ayant subi un changement.
 Exemple : "changes": { "Belgium": { "owner": "France" } }
 
 Format JSON strict obligatoire.`,
@@ -181,7 +185,7 @@ TEMPS :
 - Fin : ${body.dateEnd}
 - Durée : ${body.duration?.amount || 0} ${body.duration?.unit || ""}
 
-JOUEUR : ${body.selectedCountry || "aucun"}
+PAYS DU JOUEUR : ${body.selectedCountry || "aucun"}
 
 ACTIONS :
 ${JSON.stringify(body.actions || [], null, 2)}
@@ -199,7 +203,7 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
                     },
                     changes: {
                         type: "OBJECT",
-                        description: "Dictionnaire des changements par territoire"
+                        description: "Dictionnaire des territoires modifiés"
                     }
                 },
                 required: ["message", "events", "changes"]
@@ -223,7 +227,7 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
 }
 
 /* =========================================================
-   HELPERS
+   EXTRACTEUR ET NETTOYEUR
 ========================================================= */
 
 function extractGeminiText(data) {
