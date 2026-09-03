@@ -1,4 +1,27 @@
+/* =========================================================
+   GESTION DES MÉTHODES HTTP & CORS
+========================================================= */
+
+// Intercepte les requêtes OPTIONS pour le preflight CORS
+export async function onRequestOptions() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "86400",
+        },
+    });
+}
+
+// Fonction principale pour traiter la requête POST
 export async function onRequestPost(context) {
+    const corsHeaders = {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+    };
+
     try {
         const body = await context.request.json();
         const apiKey = context.env.AI_API_KEY;
@@ -6,13 +29,13 @@ export async function onRequestPost(context) {
         if (!apiKey) {
             return Response.json(
                 { error: "AI_API_KEY n'est pas configurée sur Cloudflare." },
-                { status: 500 }
+                { status: 500, headers: corsHeaders }
             );
         }
 
         /*
          * =====================================================
-         * ENDPOINT GEMINI
+         * ENDPOINT GEMINI 3.8 FLASH
          * =====================================================
          */
         const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
@@ -48,10 +71,10 @@ export async function onRequestPost(context) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Gemini API Error Detail (HTTP 400+):", JSON.stringify(data, null, 2));
+            console.error("Gemini API Error Detail:", JSON.stringify(data, null, 2));
             return Response.json(
                 { error: "Gemini a renvoyé une erreur.", details: data },
-                { status: response.status }
+                { status: response.status, headers: corsHeaders }
             );
         }
 
@@ -64,7 +87,7 @@ export async function onRequestPost(context) {
             console.error("Erreur de parsing JSON Gemini:", rawText);
             return Response.json(
                 { error: "Gemini a fourni un format JSON invalide.", raw: rawText },
-                { status: 500 }
+                { status: 500, headers: corsHeaders }
             );
         }
 
@@ -77,7 +100,7 @@ export async function onRequestPost(context) {
             return Response.json({
                 message: result.message || "Aucune réponse.",
                 events: Array.isArray(result.events) ? result.events : []
-            });
+            }, { headers: corsHeaders });
         }
 
         if (body.type === "simulation") {
@@ -85,26 +108,26 @@ export async function onRequestPost(context) {
                 message: result.message || "La simulation est terminée.",
                 events: Array.isArray(result.events) ? result.events : [],
                 changes: result.changes && typeof result.changes === "object" ? result.changes : {}
-            });
+            }, { headers: corsHeaders });
         }
 
         return Response.json({
             message: result.message || "Requête traitée.",
             events: [],
             changes: {}
-        });
+        }, { headers: corsHeaders });
 
     } catch (error) {
         console.error("AI Function Exception:", error);
         return Response.json(
             { error: "Erreur lors de la communication avec le serveur AI." },
-            { status: 500 }
+            { status: 500, headers: corsHeaders }
         );
     }
 }
 
 /* =========================================================
-   PROMPTS ET SCHÉMAS COMPATIBLES GEMINI (SANS HTTP 400)
+   PROMPTS ET SCHÉMAS
 ========================================================= */
 
 function buildGeminiConfig(body) {
@@ -161,7 +184,6 @@ ${JSON.stringify(body.actions || [], null, 2)}
 ÉTAT INITIAL DU MONDE :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 `,
-            // Le schéma d'objet générique sans additionalProperties évite la 400
             responseSchema: {
                 type: "OBJECT",
                 properties: {
