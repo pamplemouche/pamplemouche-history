@@ -1,27 +1,32 @@
 /* =========================================================
-   GESTION DES MÉTHODES HTTP & CORS
+   HANDLER UNIQUE (INTERCEPTE TOUTES LES REQUÊTES)
 ========================================================= */
 
-// Intercepte les requêtes OPTIONS pour le preflight CORS
-export async function onRequestOptions() {
-    return new Response(null, {
-        status: 204,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "86400",
-        },
-    });
-}
-
-// Fonction principale pour traiter la requête POST
-export async function onRequestPost(context) {
+export async function onRequest(context) {
     const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
         "Content-Type": "application/json"
     };
 
+    // 1. Gestion du Preflight CORS (browser OPTIONS)
+    if (context.request.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: corsHeaders
+        });
+    }
+
+    // 2. Refus clair si ce n'est pas un POST (si le front fait un GET par erreur)
+    if (context.request.method !== "POST") {
+        return new Response(
+            JSON.stringify({ error: `Méthode ${context.request.method} non autorisée. Utilisez POST.` }),
+            { status: 405, headers: corsHeaders }
+        );
+    }
+
+    // 3. Traitement de la requête POST
     try {
         const body = await context.request.json();
         const apiKey = context.env.AI_API_KEY;
