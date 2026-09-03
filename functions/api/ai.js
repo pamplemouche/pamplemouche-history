@@ -12,7 +12,7 @@ export async function onRequestPost(context) {
 
         /*
          * =====================================================
-         * GEMINI 3.8 FLASH ENDPOINT
+         * ENDPOINT GEMINI
          * =====================================================
          */
         const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
@@ -30,7 +30,7 @@ export async function onRequestPost(context) {
                 }
             ],
             generationConfig: {
-                temperature: 1.0,
+                temperature: 0.7,
                 maxOutputTokens: 4096,
                 responseMimeType: "application/json",
                 responseSchema: responseSchema
@@ -48,7 +48,7 @@ export async function onRequestPost(context) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Gemini API Error:", data);
+            console.error("Gemini API Error Detail (HTTP 400+):", JSON.stringify(data, null, 2));
             return Response.json(
                 { error: "Gemini a renvoyé une erreur.", details: data },
                 { status: response.status }
@@ -70,7 +70,7 @@ export async function onRequestPost(context) {
 
         /*
          * =====================================================
-         * RETOURS CLIENT (DISCUSSION OU SIMULATION)
+         * RETOURS CLIENT
          * =====================================================
          */
         if (body.type === "discussion") {
@@ -104,24 +104,18 @@ export async function onRequestPost(context) {
 }
 
 /* =========================================================
-   CONFIGURATION PROMPTS ET SCHÉMAS DE RÉPONSE
+   PROMPTS ET SCHÉMAS COMPATIBLES GEMINI (SANS HTTP 400)
 ========================================================= */
 
 function buildGeminiConfig(body) {
     if (body.type === "discussion") {
         return {
             systemInstruction: `Tu es l'assistant IA du jeu Pamplemouche History.
-Tu aides le joueur à comprendre le monde dans lequel il joue.
-Tu peux expliquer la situation d'un pays, son économie, son armée, sa diplomatie, ses relations, les événements et les conséquences d'une décision.
-Cette requête est uniquement une discussion : NE MODIFIE PAS l'état du monde.
-Réponds obligatoirement au format JSON indiqué.`,
+Tu aides le joueur à comprendre le monde sans en modifier l'état.
+Réponds obligatoirement avec un JSON valide respectant le schéma demandé.`,
             prompt: `
-DATE ACTUELLE :
-${body.date || "inconnue"}
-
-PAYS SÉLECTIONNÉ :
-${body.selectedCountry || "aucun"}
-
+DATE ACTUELLE : ${body.date || "inconnue"}
+PAYS SÉLECTIONNÉ : ${body.selectedCountry || "aucun"}
 ÉTAT ACTUEL DU MONDE :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 
@@ -145,32 +139,29 @@ ${body.message || ""}
     if (body.type === "simulation") {
         return {
             systemInstruction: `Tu es le moteur de simulation de Pamplemouche History.
-Tu dois simuler l'évolution du monde entre deux dates.
-Les actions du joueur ne sont PAS instantanées, tiens compte de la durée.
-Simule également l'évolution normale des autres pays (relations, traités, mobilisations, économie).
+Tu simules l'évolution du monde entre deux dates.
+Les actions ne sont pas instantanées. Simule aussi les autres pays.
 
-TERRITOIRES & ANNEXIONS :
-Pour une annexion, NE SUPPRIME PAS le territoire, modifie simplement la propriété "owner".
-IMPORTANT : Tu NE DOIS PAS renvoyer tout le worldState. Renvoie dans "changes" uniquement les territoires dont le propriétaire ou un élément a changé.
+ANNEXIONS ET TERRITOIRES :
+Dans "changes", renvoie uniquement un objet dictionnaire des territoires modifiés.
 Exemple : "changes": { "Belgium": { "owner": "France" } }
 
-RÉSUMÉ :
-Explicite ce que les actions ont provoqué, les réactions des pays, les événements et les changements diplomatiques ou territoriaux.`,
+Format JSON strict obligatoire.`,
             prompt: `
 TEMPS :
-- DATE DE DÉPART : ${body.dateStart}
-- DATE D'ARRIVÉE : ${body.dateEnd}
-- DURÉE : ${body.duration?.amount || 0} ${body.duration?.unit || ""}
+- Début : ${body.dateStart}
+- Fin : ${body.dateEnd}
+- Durée : ${body.duration?.amount || 0} ${body.duration?.unit || ""}
 
-JOUEUR :
-- PAYS : ${body.selectedCountry || "aucun"}
+JOUEUR : ${body.selectedCountry || "aucun"}
 
-ACTIONS PRÉPARÉES :
+ACTIONS :
 ${JSON.stringify(body.actions || [], null, 2)}
 
 ÉTAT INITIAL DU MONDE :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 `,
+            // Le schéma d'objet générique sans additionalProperties évite la 400
             responseSchema: {
                 type: "OBJECT",
                 properties: {
@@ -181,14 +172,7 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
                     },
                     changes: {
                         type: "OBJECT",
-                        description: "Map des territoires modifiés uniquement",
-                        additionalProperties: {
-                            type: "OBJECT",
-                            properties: {
-                                owner: { type: "STRING" }
-                            },
-                            required: ["owner"]
-                        }
+                        description: "Dictionnaire des changements par territoire"
                     }
                 },
                 required: ["message", "events", "changes"]
@@ -203,13 +187,8 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
             type: "OBJECT",
             properties: {
                 message: { type: "STRING" },
-                events: {
-                    type: "ARRAY",
-                    items: { type: "STRING" }
-                },
-                changes: {
-                    type: "OBJECT"
-                }
+                events: { type: "ARRAY", items: { type: "STRING" } },
+                changes: { type: "OBJECT" }
             },
             required: ["message", "events", "changes"]
         }
@@ -217,7 +196,7 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
 }
 
 /* =========================================================
-   EXTRACTION & NETTOYAGE
+   HELPERS
 ========================================================= */
 
 function extractGeminiText(data) {
