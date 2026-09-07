@@ -819,7 +819,7 @@ async function askAI(payload) {
 
         const response =
             await fetch(
-                "./api/ai.js",
+                "/api/ai", // CORRECTION ICI: URL modifiée de "./api/ai.js" à "/api/ai"
                 {
 
                     method:
