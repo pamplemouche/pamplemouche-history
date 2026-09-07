@@ -69,20 +69,21 @@ export async function onRequest(context) {
             }
         };
 
-        const response = await fetch(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
+        // Utilisation de la fonction avec retry (3 tentatives maximum) au lieu de fetch classique
+        const response = await fetchWithRetry(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
-        });
+        }, 3);
 
         const data = await response.json();
 
         if (!response.ok) {
             console.error("Détails Erreur API Gemini:", JSON.stringify(data, null, 2));
             return Response.json(
-                { error: "L'API Gemini a renvoyé une erreur.", details: data },
+                { error: "L'API Gemini a renvoyé une erreur après plusieurs tentatives.", details: data },
                 { status: response.status, headers: corsHeaders }
             );
         }
@@ -253,4 +254,38 @@ function cleanJson(text) {
     }
 
     return result;
+}
+
+/* =========================================================
+   GESTIONNAIRE DE RÉESSAI (EXPONENTIAL BACKOFF)
+========================================================= */
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchWithRetry(url, options, maxRetries = 3) {
+    let attempt = 0;
+    const baseDelay = 1000; // Délai de base : 1 seconde
+
+    while (attempt <= maxRetries) {
+        const response = await fetch(url, options);
+
+        // Si la requête a réussi ou si l'erreur n'est pas liée à une surcharge/panne serveur
+        if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) {
+            return response;
+        }
+
+        attempt++;
+        
+        // Abandon après le nombre maximum de tentatives
+        if (attempt > maxRetries) {
+            console.error(`[Gemini API] Échec définitif après ${maxRetries} tentatives.`);
+            return response;
+        }
+
+        // Calcul du délai (1s, 2s, 4s...)
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.warn(`[Gemini API] Erreur ${response.status} interceptée. Nouvelle tentative ${attempt}/${maxRetries} dans ${delay}ms...`);
+        
+        await sleep(delay);
+    }
 }
