@@ -1,9 +1,8 @@
 /* =========================================================
-   FUNCTIONS/API/AI.JS - COMPATIBLE GEMINI FLASH
+   FUNCTIONS/API/AI.JS - AFFICHAGE ERREURS DANS LA DISCUSSION (SAFARI iOS)
 ========================================================= */
 
 export async function onRequest(context) {
-    // Configuration universelle des en-têtes CORS
     const corsHeaders = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -12,56 +11,39 @@ export async function onRequest(context) {
         "Content-Type": "application/json"
     };
 
-    // 1. Prise en charge des requêtes Preflight (OPTIONS)
     if (context.request.method === "OPTIONS") {
-        return new Response(null, {
-            status: 204,
-            headers: corsHeaders
-        });
+        return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // 2. Vérification de la méthode POST
     if (context.request.method !== "POST") {
-        return new Response(
-            JSON.stringify({ 
-                error: `Méthode ${context.request.method} non autorisée. Veuillez soumettre une requête POST.` 
-            }),
-            { status: 405, headers: corsHeaders }
+        return createDiscussionErrorResponse(
+            `⚠️ Erreur : Méthode ${context.request.method} non autorisée. Soumets une requête POST.`,
+            corsHeaders
         );
     }
 
-    // 3. Traitement de la requête
     try {
         const body = await context.request.json();
         const apiKey = context.env.AI_API_KEY;
 
         if (!apiKey) {
-            return Response.json(
-                { error: "La variable d'environnement AI_API_KEY n'est pas configurée sur Cloudflare." },
-                { status: 500, headers: corsHeaders }
+            return createDiscussionErrorResponse(
+                "⚠️ [CLOUDFLARE] La variable d'environnement AI_API_KEY n'est pas configurée dans le tableau de bord Cloudflare.",
+                corsHeaders
             );
         }
 
         /*
-         * =====================================================
-         * APPEL API GEMINI FLASH (v1beta / gemini-2.0-flash)
-         * =====================================================
+         * APPEL API GEMINI 2.5 FLASH
          */
-        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-
+        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+        const targetUrl = `${endpoint}?key=${encodeURIComponent(apiKey)}`;
 
         const { prompt, systemInstruction, responseSchema } = buildGeminiConfig(body);
 
         const requestBody = {
-            systemInstruction: {
-                parts: [{ text: systemInstruction }]
-            },
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: prompt }]
-                }
-            ],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 4096,
@@ -70,23 +52,32 @@ export async function onRequest(context) {
             }
         };
 
-        // Utilisation du fetch nativement disponible dans Cloudflare Workers
-        const response = await fetchWithRetry(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
+        const response = await fetchWithRetry(targetUrl, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(requestBody)
         }, 3);
 
-        const data = await response.json();
+        const rawResponseBody = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawResponseBody);
+        } catch {
+            data = { rawText: rawResponseBody };
+        }
 
+        // Si l'API renvoie un statut != 200 (ex: 404, 400), on formate l'erreur pour le tchat
         if (!response.ok) {
-            console.error("Détails Erreur API Gemini :", JSON.stringify(data, null, 2));
-            return Response.json(
-                { error: "L'API Gemini a renvoyé une erreur après plusieurs tentatives.", details: data },
-                { status: response.status, headers: corsHeaders }
-            );
+            const formattedError = [
+                `⚠️ [ERREUR API GEMINI ${response.status}]`,
+                `URL appelée : ${endpoint}`,
+                `Détails de la réponse :`,
+                "```json",
+                JSON.stringify(data, null, 2),
+                "```"
+            ].join("\n\n");
+
+            return createDiscussionErrorResponse(formattedError, corsHeaders);
         }
 
         const rawText = extractGeminiText(data);
@@ -95,17 +86,22 @@ export async function onRequest(context) {
         try {
             result = JSON.parse(cleanJson(rawText));
         } catch (error) {
-            console.error("Erreur d'analyse du JSON Gemini :", rawText);
-            return Response.json(
-                { error: "Gemini a fourni une réponse au format JSON invalide.", raw: rawText },
-                { status: 500, headers: corsHeaders }
-            );
+            const parsingError = [
+                "⚠️ [ERREUR D'ANALYSE JSON GEMINI]",
+                "Gemini n'a pas renvoyé un JSON valide.",
+                `Texte brut reçu :`,
+                rawText || "(réponse vide)",
+                `Données complètes API :`,
+                "```json",
+                JSON.stringify(data, null, 2),
+                "```"
+            ].join("\n\n");
+
+            return createDiscussionErrorResponse(parsingError, corsHeaders);
         }
 
         /*
-         * =====================================================
-         * RETOUR AU CLIENT FRONTEND
-         * =====================================================
+         * RETOUR NORMAL SI TOUT EST OK
          */
         if (body.type === "discussion") {
             return Response.json({
@@ -129,12 +125,26 @@ export async function onRequest(context) {
         }, { headers: corsHeaders });
 
     } catch (error) {
-        console.error("Exception dans la Cloudflare Function :", error);
-        return Response.json(
-            { error: "Erreur interne lors du traitement de la requête IA." },
-            { status: 500, headers: corsHeaders }
-        );
+        const exceptionLog = [
+            "⚠️ [EXCEPTION WORKER CLOUDFLARE]",
+            `Erreur : ${error.message || String(error)}`,
+            `Stack : ${error.stack || "non disponible"}`
+        ].join("\n\n");
+
+        return createDiscussionErrorResponse(exceptionLog, corsHeaders);
     }
+}
+
+/* =========================================================
+   UTILITAIRES DE RÉPONSE POUR INTERFACE DISCUSSION
+========================================================= */
+
+function createDiscussionErrorResponse(errorMessage, headers) {
+    return Response.json({
+        message: errorMessage,
+        events: ["⚠️ Erreur système détectée"],
+        changes: {}
+    }, { status: 200, headers });
 }
 
 /* =========================================================
@@ -160,10 +170,7 @@ ${body.message || ""}
                 type: "OBJECT",
                 properties: {
                     message: { type: "STRING" },
-                    events: {
-                        type: "ARRAY",
-                        items: { type: "STRING" }
-                    }
+                    events: { type: "ARRAY", items: { type: "STRING" } }
                 },
                 required: ["message", "events"]
             }
@@ -199,14 +206,8 @@ ${JSON.stringify(body.worldState || {}, null, 2)}
                 type: "OBJECT",
                 properties: {
                     message: { type: "STRING" },
-                    events: {
-                        type: "ARRAY",
-                        items: { type: "STRING" }
-                    },
-                    changes: {
-                        type: "OBJECT",
-                        description: "Dictionnaire des territoires modifiés"
-                    }
+                    events: { type: "ARRAY", items: { type: "STRING" } },
+                    changes: { type: "OBJECT", description: "Dictionnaire des territoires modifiés" }
                 },
                 required: ["message", "events", "changes"]
             }
@@ -268,7 +269,6 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
     const baseDelay = 1000;
 
     while (attempt <= maxRetries) {
-        // 'fetch' est globalement accessible dans l'environnement Cloudflare Workers
         const response = await fetch(url, options);
 
         if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) {
@@ -276,15 +276,12 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
         }
 
         attempt++;
-        
+
         if (attempt > maxRetries) {
-            console.error(`[Gemini API] Échec définitif après ${maxRetries} tentatives.`);
             return response;
         }
 
         const delay = baseDelay * Math.pow(2, attempt - 1);
-        console.warn(`[Gemini API] Erreur ${response.status} interceptée. Nouvelle tentative ${attempt}/${maxRetries} dans ${delay}ms...`);
-        
         await sleep(delay);
     }
 }
