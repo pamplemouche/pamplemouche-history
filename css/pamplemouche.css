@@ -69,8 +69,7 @@ select {
 
     height: 64px;
 
-    padding:
-        0 28px;
+    padding: 0 clamp(16px, 4vw, 28px);
 
     display: flex;
 
@@ -242,7 +241,7 @@ select {
         0 auto;
 
     padding:
-        110px 30px 70px;
+        clamp(40px, 8vw, 110px) clamp(16px, 4vw, 30px) clamp(30px, 5vw, 70px);
 
 }
 
@@ -275,10 +274,10 @@ select {
     margin: 0;
 
     font-size:
-        clamp(52px, 8vw, 94px);
+        clamp(32px, 7vw, 94px);
 
     line-height:
-        .94;
+        .95;
 
     letter-spacing:
         -.06em;
@@ -295,7 +294,7 @@ select {
 
     color: var(--muted);
 
-    font-size: 17px;
+    font-size: clamp(14px, 2vw, 17px);
 
     line-height: 1.6;
 
@@ -319,12 +318,12 @@ select {
 
 .features {
 
-    margin-top: 100px;
+    margin-top: clamp(40px, 8vw, 100px);
 
     display: grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        repeat(auto-fit, minmax(260px, 1fr));
 
     gap: 12px;
 
@@ -391,7 +390,7 @@ select {
     margin: auto;
 
     padding:
-        55px 30px;
+        clamp(24px, 5vw, 55px) clamp(16px, 4vw, 30px);
 
 }
 
@@ -404,9 +403,11 @@ select {
 
     align-items: flex-end;
 
-    gap: 30px;
+    gap: 20px;
 
     margin-bottom: 35px;
+
+    flex-wrap: wrap;
 
 }
 
@@ -415,7 +416,7 @@ select {
 
     margin: 0;
 
-    font-size: 43px;
+    font-size: clamp(28px, 5vw, 43px);
 
     letter-spacing:
         -.04em;
@@ -441,7 +442,7 @@ select {
     grid-template-columns:
         repeat(
             auto-fill,
-            minmax(270px, 1fr)
+            minmax(min(100%, 270px), 1fr)
         );
 
     gap: 12px;
@@ -534,6 +535,7 @@ select {
     width: 100vw;
 
     height: 100vh;
+    height: 100dvh;
 
     overflow: hidden;
 
@@ -575,7 +577,7 @@ select {
     height: 60px;
 
     padding:
-        0 18px;
+        0 clamp(12px, 3vw, 18px);
 
     display: flex;
 
@@ -642,6 +644,8 @@ select {
 
     backdrop-filter:
         blur(10px);
+
+    white-space: nowrap;
 
 }
 
@@ -718,7 +722,7 @@ select {
     right: 18px;
     bottom: 18px;
 
-    width: 235px;
+    width: min(235px, calc(100vw - 36px));
 
     padding: 15px;
 
@@ -751,7 +755,7 @@ select {
 
     font-weight: 700;
 
-    font-size: 5px;
+    font-size: 14px;
 
 }
 
@@ -814,7 +818,7 @@ select {
 
     top: calc(100% + 7px);
 
-    width: 165px;
+    width: min(165px, calc(100vw - 36px));
 
     padding: 5px;
 
@@ -890,9 +894,13 @@ select {
 
     display: flex;
 
+    flex-wrap: wrap;
+
     gap: 7px;
 
     z-index: 40;
+
+    max-width: calc(100vw - 36px);
 
 }
 
@@ -1314,10 +1322,273 @@ select {
 
 
 /* =====================================================
-   RESPONSIVE
+   COMPTE GAMES
 ===================================================== */
 
-@media (max-width: 700px) {
+.gamesAccount {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+
+/* Solde Pamp */
+
+.pampBalance {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+
+    padding: 7px 11px;
+
+
+    border-radius: 999px;
+
+
+    background: rgba(255, 255, 255, 0.08);
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+
+    color: white;
+
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+
+    white-space: nowrap;
+
+}
+
+
+/* Rond du profil */
+
+.profileButton {
+
+    width: 38px;
+
+    height: 38px;
+
+
+    padding: 0;
+
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    border-radius: 50%;
+
+
+    background: rgba(255, 255, 255, 0.12);
+
+
+    color: white;
+
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+
+    cursor: pointer;
+
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+
+    transition:
+
+        background 0.15s ease,
+
+        transform 0.15s ease;
+
+}
+
+
+.profileButton:hover {
+
+    background: rgba(255, 255, 255, 0.2);
+
+    transform: scale(1.05);
+
+}
+
+
+/* Menu */
+
+.accountMenu {
+
+    position: absolute;
+
+
+    top: calc(100% + 10px);
+
+    right: 0;
+
+
+    width: min(210px, calc(100vw - 32px));
+
+
+    padding: 14px;
+
+
+    border-radius: 14px;
+
+
+    background: rgba(25, 25, 30, 0.97);
+
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+
+    box-shadow:
+
+        0 12px 35px rgba(0, 0, 0, 0.35);
+
+
+    backdrop-filter: blur(14px);
+
+
+    opacity: 0;
+
+    visibility: hidden;
+
+
+    transform: translateY(-5px);
+
+
+    transition:
+
+        opacity 0.15s ease,
+
+        transform 0.15s ease,
+
+        visibility 0.15s ease;
+
+
+    z-index: 1000;
+
+}
+
+
+.accountMenu.open {
+
+    opacity: 1;
+
+    visibility: visible;
+
+
+    transform: translateY(0);
+
+}
+
+
+/* Nom */
+
+.accountName {
+
+    color: white;
+
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+
+    padding: 4px 4px 10px;
+
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+/* Pamp dans le menu */
+
+.accountPamp {
+
+    color: rgba(255, 255, 255, 0.75);
+
+
+    font-size: 14px;
+
+
+    padding: 11px 4px;
+
+}
+
+
+/* Déconnexion */
+
+.accountLogout {
+
+    width: 100%;
+
+
+    padding: 9px 10px;
+
+
+    border: none;
+
+    border-radius: 9px;
+
+
+    background: rgba(255, 255, 255, 0.07);
+
+
+    color: white;
+
+
+    font-size: 14px;
+
+
+    cursor: pointer;
+
+
+    text-align: left;
+
+
+    transition:
+
+        background 0.15s ease;
+
+}
+
+
+.accountLogout:hover {
+
+    background: rgba(255, 255, 255, 0.14);
+
+}
+
+
+/* =====================================================
+   RESPONSIVE & MEDIA QUERIES
+===================================================== */
+
+@media (max-width: 768px) {
 
     .features {
 
@@ -1332,193 +1603,90 @@ select {
 
         flex-direction: column;
 
+        gap: 12px;
+
     }
 
 
     .home {
 
-        padding-top: 70px;
+        padding-top: 50px;
 
     }
 
 
-    .hero h1 {
+    #bottomControls {
 
-        font-size: 57px;
+        bottom: 12px;
+
+        left: 12px;
+
+        max-width: calc(100vw - 24px);
+
+    }
+
+
+    #countryPanel {
+
+        right: 12px;
+
+        bottom: 70px;
+
+    }
+
+
+    #aiPanel {
+
+        left: 12px;
+
+        top: 12px;
+
+        width: calc(100vw - 24px);
+
+        height: calc(100vh - 80px);
+
+        height: calc(100dvh - 80px);
 
     }
 
 }
-/* =====================================================
-   COMPTE GAMES
-===================================================== */
 
-.gamesAccount {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
+@media (max-width: 480px) {
 
-/* Solde Pamp */
+    .topbar {
 
-.pampBalance {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+        padding: 0 16px;
 
-    padding: 7px 11px;
+    }
 
-    border-radius: 999px;
 
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    .pampBalance {
 
-    color: white;
+        font-size: 12px;
 
-    font-size: 14px;
-    font-weight: 600;
+        padding: 5px 9px;
 
-    white-space: nowrap;
-}
+    }
 
 
-/* Rond du profil */
+    .profileButton {
 
-.profileButton {
-    width: 38px;
-    height: 38px;
+        width: 34px;
 
-    padding: 0;
+        height: 34px;
 
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+        font-size: 13px;
 
-    background: rgba(255, 255, 255, 0.12);
+    }
 
-    color: white;
 
-    font-size: 15px;
-    font-weight: 700;
+    #dateDisplay {
 
-    cursor: pointer;
+        font-size: 10px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+        padding: 5px 8px;
 
-    transition:
-        background 0.15s ease,
-        transform 0.15s ease;
-}
+    }
 
-
-.profileButton:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}
-
-
-/* Menu */
-
-.accountMenu {
-    position: absolute;
-
-    top: calc(100% + 10px);
-    right: 0;
-
-    width: 210px;
-
-    padding: 14px;
-
-    border-radius: 14px;
-
-    background: rgba(25, 25, 30, 0.97);
-
-    border: 1px solid rgba(255, 255, 255, 0.12);
-
-    box-shadow:
-        0 12px 35px rgba(0, 0, 0, 0.35);
-
-    backdrop-filter: blur(14px);
-
-    opacity: 0;
-    visibility: hidden;
-
-    transform: translateY(-5px);
-
-    transition:
-        opacity 0.15s ease,
-        transform 0.15s ease,
-        visibility 0.15s ease;
-
-    z-index: 1000;
-}
-
-
-.accountMenu.open {
-    opacity: 1;
-    visibility: visible;
-
-    transform: translateY(0);
-}
-
-
-/* Nom */
-
-.accountName {
-    color: white;
-
-    font-size: 15px;
-    font-weight: 600;
-
-    padding: 4px 4px 10px;
-
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-
-/* Pamp dans le menu */
-
-.accountPamp {
-    color: rgba(255, 255, 255, 0.75);
-
-    font-size: 14px;
-
-    padding: 11px 4px;
-}
-
-
-/* Déconnexion */
-
-.accountLogout {
-    width: 100%;
-
-    padding: 9px 10px;
-
-    border: none;
-    border-radius: 9px;
-
-    background: rgba(255, 255, 255, 0.07);
-
-    color: white;
-
-    font-size: 14px;
-
-    cursor: pointer;
-
-    text-align: left;
-
-    transition:
-        background 0.15s ease;
-}
-
-
-.accountLogout:hover {
-    background: rgba(255, 255, 255, 0.14);
 }
