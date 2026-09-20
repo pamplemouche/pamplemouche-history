@@ -1,5 +1,5 @@
 /* =========================================================
-   FUNCTIONS/API/AI.JS - COMPATIBLE GEMINI 3.8 FLASH
+   FUNCTIONS/API/AI.JS - COMPATIBLE GEMINI FLASH
 ========================================================= */
 
 export async function onRequest(context) {
@@ -12,7 +12,7 @@ export async function onRequest(context) {
         "Content-Type": "application/json"
     };
 
-    // 1. Prise en charge des requêtes Preflight (OPTIONS) envoyées par les navigateurs
+    // 1. Prise en charge des requêtes Preflight (OPTIONS)
     if (context.request.method === "OPTIONS") {
         return new Response(null, {
             status: 204,
@@ -20,7 +20,7 @@ export async function onRequest(context) {
         });
     }
 
-    // 2. Vérification que la méthode utilisée est bien POST
+    // 2. Vérification de la méthode POST
     if (context.request.method !== "POST") {
         return new Response(
             JSON.stringify({ 
@@ -44,10 +44,10 @@ export async function onRequest(context) {
 
         /*
          * =====================================================
-         * APPEL API GEMINI 3.8 FLASH
+         * APPEL API GEMINI FLASH (v1beta / gemini-2.0-flash)
          * =====================================================
          */
-        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
         const { prompt, systemInstruction, responseSchema } = buildGeminiConfig(body);
 
@@ -69,7 +69,7 @@ export async function onRequest(context) {
             }
         };
 
-        // Utilisation de la fonction avec retry (3 tentatives maximum) au lieu de fetch classique
+        // Utilisation du fetch nativement disponible dans Cloudflare Workers
         const response = await fetchWithRetry(`${endpoint}?key=${encodeURIComponent(apiKey)}`, {
             method: "POST",
             headers: {
@@ -81,7 +81,7 @@ export async function onRequest(context) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Détails Erreur API Gemini:", JSON.stringify(data, null, 2));
+            console.error("Détails Erreur API Gemini :", JSON.stringify(data, null, 2));
             return Response.json(
                 { error: "L'API Gemini a renvoyé une erreur après plusieurs tentatives.", details: data },
                 { status: response.status, headers: corsHeaders }
@@ -94,7 +94,7 @@ export async function onRequest(context) {
         try {
             result = JSON.parse(cleanJson(rawText));
         } catch (error) {
-            console.error("Erreur d'analyse du JSON Gemini:", rawText);
+            console.error("Erreur d'analyse du JSON Gemini :", rawText);
             return Response.json(
                 { error: "Gemini a fourni une réponse au format JSON invalide.", raw: rawText },
                 { status: 500, headers: corsHeaders }
@@ -128,7 +128,7 @@ export async function onRequest(context) {
         }, { headers: corsHeaders });
 
     } catch (error) {
-        console.error("Exception dans la Cloudflare Function:", error);
+        console.error("Exception dans la Cloudflare Function :", error);
         return Response.json(
             { error: "Erreur interne lors du traitement de la requête IA." },
             { status: 500, headers: corsHeaders }
@@ -264,25 +264,23 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url, options, maxRetries = 3) {
     let attempt = 0;
-    const baseDelay = 1000; // Délai de base : 1 seconde
+    const baseDelay = 1000;
 
     while (attempt <= maxRetries) {
+        // 'fetch' est globalement accessible dans l'environnement Cloudflare Workers
         const response = await fetch(url, options);
 
-        // Si la requête a réussi ou si l'erreur n'est pas liée à une surcharge/panne serveur
         if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) {
             return response;
         }
 
         attempt++;
         
-        // Abandon après le nombre maximum de tentatives
         if (attempt > maxRetries) {
             console.error(`[Gemini API] Échec définitif après ${maxRetries} tentatives.`);
             return response;
         }
 
-        // Calcul du délai (1s, 2s, 4s...)
         const delay = baseDelay * Math.pow(2, attempt - 1);
         console.warn(`[Gemini API] Erreur ${response.status} interceptée. Nouvelle tentative ${attempt}/${maxRetries} dans ${delay}ms...`);
         
