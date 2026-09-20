@@ -47,7 +47,8 @@ export async function onRequest(context) {
          * APPEL API GEMINI FLASH (v1beta / gemini-2.0-flash)
          * =====================================================
          */
-        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
 
         const { prompt, systemInstruction, responseSchema } = buildGeminiConfig(body);
 
