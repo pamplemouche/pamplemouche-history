@@ -71,7 +71,7 @@ function initializeMap() {
 
     svg.call(zoom);
 
-    d3.json("[https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json](https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json)")
+    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
         .then(world => {
             const features = topojson.feature(world, world.objects.countries).features;
 
@@ -138,15 +138,21 @@ function selectCountry(element, territory) {
     d3.select(element).classed("selected", true);
     selectedCountry = territory.name;
 
-    // Phase 1 : Choix du pays de départ
+    // Phase 1 : Choix du pays au lancement
     if (!isGameStarted) {
         playerCountry = territory.name;
-        document.getElementById("selectedCountryDisplay").textContent = "Pays choisi : " + playerCountry;
-        document.getElementById("startGameBtn").disabled = false;
+        const display = document.getElementById("selectedCountryDisplay");
+        if (display) {
+            display.textContent = "Pays choisi : " + playerCountry;
+        }
+        const startBtn = document.getElementById("startGameBtn");
+        if (startBtn) {
+            startBtn.disabled = false;
+        }
         return;
     }
 
-    // Phase 2 : En jeu
+    // Phase 2 : En cours de jeu
     document.getElementById("countryName").textContent = territory.name;
     document.getElementById("countryInfo").textContent = "Contrôlé par " + territory.owner + ".";
     document.getElementById("countryPanel").classList.add("visible");
@@ -195,7 +201,11 @@ function confirmStartGame() {
     if (!playerCountry) return;
 
     isGameStarted = true;
-    document.getElementById("startOverlay").classList.remove("open");
+    const startOverlay = document.getElementById("startOverlay");
+    if (startOverlay) {
+        startOverlay.classList.remove("open");
+        startOverlay.style.display = "none";
+    }
 
     addAiMessage(`Bienvenue Chef d'État. Vous avez pris le contrôle de : **${playerCountry}**.`);
     saveGame();
@@ -307,8 +317,12 @@ async function loadGameSave() {
         renderActions();
 
         isGameStarted = true;
-        document.getElementById("startOverlay").classList.remove("open");
-        addAiMessage(` Partiel chargée. Vous dirigez toujours **${playerCountry}**.`);
+        const startOverlay = document.getElementById("startOverlay");
+        if (startOverlay) {
+            startOverlay.classList.remove("open");
+            startOverlay.style.display = "none";
+        }
+        addAiMessage(`Partie chargée. Vous dirigez toujours **${playerCountry}**.`);
     }
 }
 
