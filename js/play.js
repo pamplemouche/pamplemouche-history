@@ -1,5 +1,7 @@
 let currentDate = new Date(1936, 0, 1);
 
+let isGameStarted = false;
+let playerCountry = null;
 let selectedCountry = null;
 let selectedCountryElement = null;
 let panelMode = "discussion";
@@ -9,7 +11,6 @@ let worldState = {};
 let countryColors = {};
 let mapGroup;
 
-// Variable d'état pour bloquer les requêtes simultanées
 let isRequestPending = false;
 
 /* =====================================================
@@ -42,6 +43,7 @@ function getCountryColor(owner) {
 document.addEventListener("DOMContentLoaded", () => {
     initializeMap();
     initializeControls();
+    checkExistingSave();
 });
 
 /* =====================================================
@@ -69,7 +71,7 @@ function initializeMap() {
 
     svg.call(zoom);
 
-    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+    d3.json("[https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json](https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json)")
         .then(world => {
             const features = topojson.feature(world, world.objects.countries).features;
 
@@ -124,7 +126,7 @@ function drawMap(path) {
 }
 
 /* =====================================================
-   COUNTRY
+   COUNTRY SELECTION
 ===================================================== */
 
 function selectCountry(element, territory) {
@@ -134,19 +136,30 @@ function selectCountry(element, territory) {
 
     selectedCountryElement = element;
     d3.select(element).classed("selected", true);
-
     selectedCountry = territory.name;
 
+    // Phase 1 : Choix du pays de départ
+    if (!isGameStarted) {
+        playerCountry = territory.name;
+        document.getElementById("selectedCountryDisplay").textContent = "Pays choisi : " + playerCountry;
+        document.getElementById("startGameBtn").disabled = false;
+        return;
+    }
+
+    // Phase 2 : En jeu
     document.getElementById("countryName").textContent = territory.name;
     document.getElementById("countryInfo").textContent = "Contrôlé par " + territory.owner + ".";
     document.getElementById("countryPanel").classList.add("visible");
 }
 
 /* =====================================================
-   CONTROLS
+   CONTROLS & LISTENERS
 ===================================================== */
 
 function initializeControls() {
+    document.getElementById("startGameBtn").addEventListener("click", confirmStartGame);
+    document.getElementById("loadGameBtn").addEventListener("click", loadGameSave);
+
     document.getElementById("actionButton").addEventListener("click", () => openAiPanel("actions"));
     document.getElementById("discussionButton").addEventListener("click", () => openAiPanel("discussion"));
     document.getElementById("closeAi").addEventListener("click", closeAiPanel);
@@ -159,7 +172,7 @@ function initializeControls() {
     });
 
     document.getElementById("timeButton").addEventListener("click", () => {
-        if (isRequestPending) return;
+        if (isRequestPending || !isGameStarted) return;
         document.getElementById("timeMenu").classList.toggle("open");
     });
 
@@ -175,7 +188,132 @@ function initializeControls() {
 }
 
 /* =====================================================
-   GESTION VERROUILLAGE UI
+   LANCEMENT ET SAUVEGARDE
+===================================================== */
+
+function confirmStartGame() {
+    if (!playerCountry) return;
+
+    isGameStarted = true;
+    document.getElementById("startOverlay").classList.remove("open");
+
+    addAiMessage(`Bienvenue Chef d'État. Vous avez pris le contrôle de : **${playerCountry}**.`);
+    saveGame();
+}
+
+function getSavePayload() {
+    return {
+        currentDate: currentDate.toISOString(),
+        playerCountry: playerCountry,
+        worldState: worldState,
+        pendingActions: pendingActions
+    };
+}
+
+async function saveGame() {
+    if (!isGameStarted) return;
+
+    const payload = getSavePayload();
+    localStorage.setItem("pamplemouche_history_save", JSON.stringify(payload));
+
+    let token = null;
+    if (window.PamplemoucheAuth && typeof PamplemoucheAuth.getToken === "function") {
+        token = PamplemoucheAuth.getToken();
+    }
+
+    if (token) {
+        try {
+            await fetch("/api/save", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.warn("Sauvegarde cloud non disponible, sauvegardé localement.");
+        }
+    }
+}
+
+async function checkExistingSave() {
+    let hasSave = false;
+
+    if (localStorage.getItem("pamplemouche_history_save")) {
+        hasSave = true;
+    }
+
+    let token = null;
+    if (window.PamplemoucheAuth && typeof PamplemoucheAuth.getToken === "function") {
+        token = PamplemoucheAuth.getToken();
+    }
+
+    if (token) {
+        try {
+            const res = await fetch("/api/save", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (res.ok) hasSave = true;
+        } catch (e) {
+            // Ignorer si pas d'endpoint save configuré
+        }
+    }
+
+    if (hasSave) {
+        document.getElementById("loadGameBtn").style.display = "block";
+    }
+}
+
+async function loadGameSave() {
+    let saveData = null;
+    let token = null;
+
+    if (window.PamplemoucheAuth && typeof PamplemoucheAuth.getToken === "function") {
+        token = PamplemoucheAuth.getToken();
+    }
+
+    if (token) {
+        try {
+            const res = await fetch("/api/save", {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (res.ok) {
+                saveData = await res.json();
+            }
+        } catch (e) {
+            console.warn("Erreur chargement cloud, bascule en local.");
+        }
+    }
+
+    if (!saveData) {
+        const local = localStorage.getItem("pamplemouche_history_save");
+        if (local) {
+            try { saveData = JSON.parse(local); } catch {}
+        }
+    }
+
+    if (saveData) {
+        currentDate = new Date(saveData.currentDate);
+        playerCountry = saveData.playerCountry;
+        selectedCountry = saveData.playerCountry;
+        pendingActions = saveData.pendingActions || [];
+
+        if (saveData.worldState) {
+            applyWorldState(saveData.worldState);
+        }
+
+        updateDateDisplay();
+        renderActions();
+
+        isGameStarted = true;
+        document.getElementById("startOverlay").classList.remove("open");
+        addAiMessage(` Partiel chargée. Vous dirigez toujours **${playerCountry}**.`);
+    }
+}
+
+/* =====================================================
+   VERROUILLAGE UI
 ===================================================== */
 
 function setUIBusy(busy) {
@@ -197,6 +335,8 @@ function setUIBusy(busy) {
 ===================================================== */
 
 function openAiPanel(mode) {
+    if (!isGameStarted) return;
+
     panelMode = mode;
 
     const panel = document.getElementById("aiPanel");
@@ -213,7 +353,7 @@ function openAiPanel(mode) {
         document.getElementById("messageInput").placeholder = "Posez une question...";
 
         if (messages.children.length === 0) {
-            addAiMessage("Je suis prêt. Vous pouvez me poser une question sur le monde ou sur un pays.");
+            addAiMessage(`Je suis prêt. Vous pouvez me poser une question sur le monde ou sur l'état de **${playerCountry}**.`);
         }
     } else {
         title.textContent = "Actions";
@@ -238,7 +378,7 @@ function closeAiPanel() {
 ===================================================== */
 
 function sendMessage() {
-    if (isRequestPending) return;
+    if (isRequestPending || !isGameStarted) return;
 
     const input = document.getElementById("messageInput");
     const text = input.value.trim();
@@ -250,6 +390,7 @@ function sendMessage() {
     if (panelMode === "actions") {
         pendingActions.push(text);
         renderActions();
+        saveGame();
         return;
     }
 
@@ -259,6 +400,7 @@ function sendMessage() {
         type: "discussion",
         message: text,
         date: currentDate.toISOString(),
+        playerCountry: playerCountry,
         selectedCountry: selectedCountry,
         worldState: worldState
     });
@@ -382,7 +524,7 @@ function renderActions() {
 ===================================================== */
 
 async function advanceTime(amount, unit) {
-    if (isRequestPending) return;
+    if (isRequestPending || !isGameStarted) return;
 
     document.getElementById("timeMenu").classList.remove("open");
 
@@ -416,6 +558,7 @@ async function advanceTime(amount, unit) {
                     dateEnd: currentDate.toISOString(),
                     duration: { amount: amount, unit: unit },
                     actions: actions,
+                    playerCountry: playerCountry,
                     selectedCountry: selectedCountry,
                     worldState: worldState
                 })
@@ -434,7 +577,6 @@ async function advanceTime(amount, unit) {
                 throw new Error("HTTP " + response.status + " : " + (result.error || "Erreur de simulation."));
             }
 
-            // Application des changements de territoires renvoyés par Gemini
             if (result.changes && typeof result.changes === "object") {
                 for (const [territoryName, change] of Object.entries(result.changes)) {
                     if (change && change.owner) {
@@ -465,6 +607,7 @@ async function advanceTime(amount, unit) {
 
     pendingActions = [];
     renderActions();
+    saveGame();
 }
 
 /* =====================================================
@@ -522,7 +665,7 @@ function updateDateDisplay() {
 ===================================================== */
 
 function openCustomTime() {
-    if (isRequestPending) return;
+    if (isRequestPending || !isGameStarted) return;
 
     document.getElementById("timeMenu").classList.remove("open");
     document.getElementById("customOverlay").classList.add("open");
@@ -533,7 +676,7 @@ function closeCustomTime() {
 }
 
 function confirmCustomTime() {
-    if (isRequestPending) return;
+    if (isRequestPending || !isGameStarted) return;
 
     const amount = Number(document.getElementById("customAmount").value);
     const unit = document.getElementById("customUnit").value;
