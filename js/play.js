@@ -14,7 +14,42 @@ let mapGroup;
 let isRequestPending = false;
 
 /* =====================================================
-   PALETTE
+   TRADUCTION DES CODES ISO NUMÉRIQUES EN NOMS FR
+===================================================== */
+
+const countryNamesFR = {
+    "004": "Afghanistan", "008": "Albanie", "012": "Algérie", "024": "Angola", "032": "Argentine",
+    "036": "Australie", "040": "Autriche", "050": "Bangladesh", "056": "Belgique", "068": "Bolivie",
+    "076": "Brésil", "100": "Bulgarie", "124": "Canada", "152": "Chili", "156": "Chine",
+    "170": "Colombie", "180": "Rép. Dém. du Congo", "178": "Congo", "188": "Costa Rica", "191": "Croatie",
+    "192": "Cuba", "208": "Danemark", "218": "Équateur", "818": "Égypte", "231": "Éthiopie",
+    "246": "Finlande", "250": "France", "268": "Géorgie", "276": "Allemagne", "288": "Ghana",
+    "300": "Grèce", "320": "Guatemala", "332": "Haïti", "340": "Honduras", "348": "Hongrie",
+    "356": "Inde", "360": "Indonésie", "364": "Iran", "368": "Irak", "372": "Irlande",
+    "376": "Israël", "380": "Italie", "388": "Jamaïque", "392": "Japon", "400": "Jordanie",
+    "404": "Kenya", "410": "Corée du Sud", "408": "Corée du Nord", "414": "Koweït", "418": "Laos",
+    "422": "Liban", "434": "Libye", "484": "Mexique", "504": "Maroc", "508": "Mozambique",
+    "104": "Birmanie", "524": "Népal", "528": "Pays-Bas", "554": "Nouvelle-Zélande", "558": "Nicaragua",
+    "566": "Nigeria", "578": "Norvège", "586": "Pakistan", "591": "Panama", "600": "Paraguay",
+    "604": "Pérou", "608": "Philippines", "616": "Pologne", "620": "Portugal", "630": "Porto Rico",
+    "634": "Qatar", "642": "Roumanie", "643": "Russie", "682": "Arabie Saoudite", "686": "Sénégal",
+    "688": "Serbie", "702": "Singapour", "703": "Slovaquie", "705": "Slovénie", "710": "Afrique du Sud",
+    "724": "Espagne", "144": "Sri Lanka", "752": "Suède", "756": "Suisse", "760": "Syrie",
+    "158": "Taïwan", "764": "Thaïlande", "788": "Tunisie", "792": "Turquie", "800": "Ouganda",
+    "804": "Ukraine", "784": "Émirats Arabes Unis", "826": "Royaume-Uni", "840": "États-Unis",
+    "858": "Uruguay", "862": "Venezuela", "704": "Viêt Nam", "887": "Yémen", "894": "Zambie", "716": "Zimbabwe"
+};
+
+function getCountryName(feature) {
+    if (feature.properties && feature.properties.name) {
+        return feature.properties.name;
+    }
+    const idStr = String(feature.id).padStart(3, "0");
+    return countryNamesFR[idStr] || "Pays " + feature.id;
+}
+
+/* =====================================================
+   PALETTE DE COULEURS
 ===================================================== */
 
 const palette = [
@@ -76,7 +111,7 @@ function initializeMap() {
             const features = topojson.feature(world, world.objects.countries).features;
 
             territories = features.map(feature => {
-                const name = feature.properties.name || "Territoire " + feature.id;
+                const name = getCountryName(feature);
 
                 worldState[name] = {
                     id: feature.id,
@@ -120,16 +155,19 @@ function drawMap(path) {
         .enter()
         .append("text")
         .attr("class", "country-label")
+        .style("pointer-events", "none")
         .attr("x", d => path.centroid(d.geometry)[0])
         .attr("y", d => path.centroid(d.geometry)[1])
         .text(d => d.name);
 }
 
 /* =====================================================
-   COUNTRY SELECTION
+   SÉLECTION D'UN PAYS
 ===================================================== */
 
 function selectCountry(element, territory) {
+    if (!territory) return;
+
     if (selectedCountryElement) {
         d3.select(selectedCountryElement).classed("selected", false);
     }
@@ -141,10 +179,12 @@ function selectCountry(element, territory) {
     // Phase 1 : Choix du pays au lancement
     if (!isGameStarted) {
         playerCountry = territory.name;
+
         const display = document.getElementById("selectedCountryDisplay");
         if (display) {
             display.textContent = "Pays choisi : " + playerCountry;
         }
+
         const startBtn = document.getElementById("startGameBtn");
         if (startBtn) {
             startBtn.disabled = false;
@@ -153,9 +193,13 @@ function selectCountry(element, territory) {
     }
 
     // Phase 2 : En cours de jeu
-    document.getElementById("countryName").textContent = territory.name;
-    document.getElementById("countryInfo").textContent = "Contrôlé par " + territory.owner + ".";
-    document.getElementById("countryPanel").classList.add("visible");
+    const nameEl = document.getElementById("countryName");
+    const infoEl = document.getElementById("countryInfo");
+    const panelEl = document.getElementById("countryPanel");
+
+    if (nameEl) nameEl.textContent = territory.name;
+    if (infoEl) infoEl.textContent = "Contrôlé par " + territory.owner + ".";
+    if (panelEl) panelEl.classList.add("visible");
 }
 
 /* =====================================================
@@ -203,8 +247,7 @@ function confirmStartGame() {
     isGameStarted = true;
     const startOverlay = document.getElementById("startOverlay");
     if (startOverlay) {
-        startOverlay.classList.remove("open");
-        startOverlay.style.display = "none";
+        startOverlay.classList.add("hidden");
     }
 
     addAiMessage(`Bienvenue Chef d'État. Vous avez pris le contrôle de : **${playerCountry}**.`);
@@ -319,8 +362,7 @@ async function loadGameSave() {
         isGameStarted = true;
         const startOverlay = document.getElementById("startOverlay");
         if (startOverlay) {
-            startOverlay.classList.remove("open");
-            startOverlay.style.display = "none";
+            startOverlay.classList.add("hidden");
         }
         addAiMessage(`Partie chargée. Vous dirigez toujours **${playerCountry}**.`);
     }
