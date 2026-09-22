@@ -46,13 +46,11 @@ export async function onRequest(context) {
             }
         };
 
-        // Modèles extraits de Google AI Studio
         const primaryModel = "gemini-3.8-flash";
         const fallbackModel = "gemini-3.5-flash-lite";
 
         let response = await callGemini(primaryModel, apiKey, requestBody);
 
-        // Si le modèle principal est indisponible ou surchargé, bascule automatique sur le modèle Lite
         if (!response.ok && [503, 404, 429].includes(response.status)) {
             console.warn(`[Gemini API] Modèle ${primaryModel} en erreur ${response.status}. Bascule sur ${fallbackModel}...`);
             response = await callGemini(fallbackModel, apiKey, requestBody);
@@ -161,14 +159,20 @@ function createDiscussionErrorResponse(errorMessage, headers) {
 ========================================================= */
 
 function buildGeminiConfig(body) {
+    const playerCountry = body.playerCountry || "aucun";
+    const selectedCountry = body.selectedCountry || "aucun";
+
     if (body.type === "discussion") {
         return {
             systemInstruction: `Tu es l'assistant IA du jeu Pamplemouche History.
-Tu aides le joueur à comprendre la situation globale du monde sans modifier son état.
+Tu conseilles le joueur qui dirige le pays : ${playerCountry}.
+Tu l'aides à comprendre la situation globale du monde sans modifier son état.
 Réponds obligatoirement avec un objet JSON valide respectant le schéma fourni.`,
             prompt: `
 DATE ACTUELLE : ${body.date || "inconnue"}
-PAYS SÉLECTIONNÉ : ${body.selectedCountry || "aucun"}
+PAYS DU JOUEUR : ${playerCountry}
+PAYS SÉLECTIONNÉ SUR LA CARTE : ${selectedCountry}
+
 ÉTAT ACTUEL DU MONDE :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 
@@ -189,11 +193,12 @@ ${body.message || ""}
     if (body.type === "simulation") {
         return {
             systemInstruction: `Tu es le moteur de simulation de Pamplemouche History.
-Tu simules l'évolution globale du monde entre deux dates données.
+Le joueur incarne le pays : ${playerCountry}.
+Tu simules l'évolution globale du monde entre deux dates données suite aux actions du joueur.
 Les actions du joueur ne sont pas instantanées. Tu dois également simuler l'évolution autonome des autres nations.
 
 MODIFICATIONS DE TERRITOIRES :
-Dans "changes", renvoie exclusivement les territoires ayant subi un changement.
+Dans "changes", renvoie exclusivement les territoires ayant subi un changement de contrôle.
 Exemple : "changes": { "Belgium": { "owner": "France" } }
 
 Format JSON strict obligatoire.`,
@@ -203,9 +208,9 @@ TEMPS :
 - Fin : ${body.dateEnd}
 - Durée : ${body.duration?.amount || 0} ${body.duration?.unit || ""}
 
-PAYS DU JOUEUR : ${body.selectedCountry || "aucun"}
+PAYS DU JOUEUR : ${playerCountry}
 
-ACTIONS :
+ACTIONS PLANIFIÉES PAR LE JOUEUR :
 ${JSON.stringify(body.actions || [], null, 2)}
 
 ÉTAT INITIAL DU MONDE :
