@@ -1,5 +1,5 @@
 /* =========================================================
-   FUNCTIONS/API/AI.JS - GESTION 503 & FALLBACK MODÈLE
+   FUNCTIONS/API/AI.JS - MODÈLES GEMINI 3.8 FLASH ET 3.5 FLASH LITE
 ========================================================= */
 
 export async function onRequest(context) {
@@ -46,14 +46,14 @@ export async function onRequest(context) {
             }
         };
 
-        // Modèle principal et modèle de secours
-        const primaryModel = "gemini-3.6-flash";
-        const fallbackModel = "gemini-2.5-flash";
+        // Modèles extraits de Google AI Studio
+        const primaryModel = "gemini-3.8-flash";
+        const fallbackModel = "gemini-3.5-flash-lite";
 
         let response = await callGemini(primaryModel, apiKey, requestBody);
 
-        // Si le modèle principal est surchargé (503) ou indisponible (404), tente le modèle de secours
-        if (response.status === 503 || response.status === 404) {
+        // Si le modèle principal est indisponible ou surchargé, bascule automatique sur le modèle Lite
+        if (!response.ok && [503, 404, 429].includes(response.status)) {
             console.warn(`[Gemini API] Modèle ${primaryModel} en erreur ${response.status}. Bascule sur ${fallbackModel}...`);
             response = await callGemini(fallbackModel, apiKey, requestBody);
         }
@@ -66,18 +66,17 @@ export async function onRequest(context) {
             data = { rawText: rawResponseBody };
         }
 
-        // Gestion propre des erreurs HTTP
         if (!response.ok) {
             if (response.status === 503) {
                 return createDiscussionErrorResponse(
-                    "⚡ **Les serveurs de Google sont temporairement surchargés (Erreur 503).**\n\nAttends quelques secondes puis réessaie.",
+                    "⚡ **Les serveurs Google sont temporairement surchargés (503).** Réessaie dans un instant.",
                     corsHeaders
                 );
             }
 
             if (response.status === 429) {
                 return createDiscussionErrorResponse(
-                    "⏳ **Limite de requêtes atteinte.** Attends environ 30 secondes avant de réessayer.",
+                    "⏳ **Limite de quota atteinte (429).** Attends environ 30 secondes avant de réessayer.",
                     corsHeaders
                 );
             }
@@ -135,7 +134,7 @@ export async function onRequest(context) {
 }
 
 /* =========================================================
-   APPEL A L'API
+   APPEL API
 ========================================================= */
 
 async function callGemini(modelName, apiKey, requestBody) {
@@ -264,7 +263,7 @@ function cleanJson(text) {
 }
 
 /* =========================================================
-   GESTIONNAIRE DE RÉESSAI (RETRY)
+   GESTIONNAIRE DE RÉESSAI
 ========================================================= */
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
