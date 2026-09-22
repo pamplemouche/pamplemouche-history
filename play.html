@@ -6,6 +6,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>History</title>
     <link rel="stylesheet" href="./css/pamplemouche.css">
+    <style>
+        /* Overlay de sélection non-bloquant pour la carte */
+        #startOverlay {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            width: min(380px, calc(100vw - 32px));
+            pointer-events: auto;
+        }
+
+        #startOverlay.hidden {
+            display: none !important;
+        }
+
+        #startCard {
+            text-align: center;
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border, #292929);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8);
+        }
+
+        .startHelp {
+            color: var(--muted, #929292);
+            font-size: 13px;
+            margin: 8px 0 14px;
+        }
+
+        #selectedCountryDisplay {
+            padding: 10px;
+            background: var(--surface2, #171717);
+            border-radius: 8px;
+            font-weight: bold;
+            margin-bottom: 14px;
+            color: var(--yellow, #ffc832);
+            font-size: 14px;
+        }
+
+        .startButtons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .startButtons button {
+            width: 100%;
+        }
+
+        .country {
+            cursor: pointer;
+            pointer-events: all;
+        }
+    </style>
 </head>
 
 <body class="gameBody">
@@ -86,22 +144,22 @@
     </div>
 
     <!-- =================================================
-         OVERLAY SELECTION PAYS (NON-BLOQUANT POUR LA CARTE)
+         CARTE FLOTTANTE DE SÉLECTION DU PAYS INITIAL
     ================================================== -->
-    <div id="startOverlay" class="open" style="position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 80px; z-index: 100; pointer-events: none; background: transparent;">
-        <div id="customBox" style="text-align: center; pointer-events: auto; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+    <div id="startOverlay">
+        <div id="startCard">
             <div class="modalTitle">Nouvelle Partie</div>
-            <p style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">
-                Cliquez directement sur un pays sur la carte ci-dessous pour le choisir.
+            <p class="startHelp">
+                Cliquez sur n'importe quel pays sur la carte pour le choisir.
             </p>
-            <div id="selectedCountryDisplay" style="padding: 10px; background: var(--surface2); border-radius: 8px; font-weight: bold; margin-bottom: 15px; color: var(--yellow);">
+            <div id="selectedCountryDisplay">
                 Aucun pays sélectionné
             </div>
-            <div class="modalButtons" style="flex-direction: column; gap: 8px;">
-                <button class="button primary" id="startGameBtn" disabled style="width: 100%;">
+            <div class="startButtons">
+                <button class="button primary" id="startGameBtn" disabled>
                     Commencer la partie
                 </button>
-                <button class="button secondary" id="loadGameBtn" style="width: 100%; display: none;">
+                <button class="button secondary" id="loadGameBtn" style="display: none;">
                     Charger la partie existante
                 </button>
             </div>
