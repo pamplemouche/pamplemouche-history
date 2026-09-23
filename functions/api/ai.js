@@ -1,5 +1,5 @@
 /* =========================================================
-   FUNCTIONS/API/AI.JS - MODÈLES GEMINI 3.8 FLASH ET 3.5 FLASH LITE
+   FUNCTIONS/API/AI.JS - SIMULATION RÉALISTE & ÉVÉNEMENTS MONDIAUX
 ========================================================= */
 
 export async function onRequest(context) {
@@ -164,16 +164,16 @@ function buildGeminiConfig(body) {
 
     if (body.type === "discussion") {
         return {
-            systemInstruction: `Tu es l'assistant IA du jeu Pamplemouche History.
-Tu conseilles le joueur qui dirige le pays : ${playerCountry}.
-Tu l'aides à comprendre la situation globale du monde sans modifier son état.
-Réponds obligatoirement avec un objet JSON valide respectant le schéma fourni.`,
+            systemInstruction: `Tu es le conseiller géopolitique et historique de Pamplemouche History.
+Tu aides le dirigeant de : ${playerCountry}.
+Tu analyses la situation mondiale de manière réaliste sans modifier l'état de la carte.
+Format de réponse : JSON strict respectant le schéma fourni.`,
             prompt: `
 DATE ACTUELLE : ${body.date || "inconnue"}
-PAYS DU JOUEUR : ${playerCountry}
-PAYS SÉLECTIONNÉ SUR LA CARTE : ${selectedCountry}
+PAYS DIRIGÉ PAR LE JOUEUR : ${playerCountry}
+PAYS INSPECTÉ : ${selectedCountry}
 
-ÉTAT ACTUEL DU MONDE :
+ÉTAT DU MONDE :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 
 QUESTION DU JOUEUR :
@@ -192,36 +192,56 @@ ${body.message || ""}
 
     if (body.type === "simulation") {
         return {
-            systemInstruction: `Tu es le moteur de simulation de Pamplemouche History.
-Le joueur incarne le pays : ${playerCountry}.
-Tu simules l'évolution globale du monde entre deux dates données suite aux actions du joueur.
-Les actions du joueur ne sont pas instantanées. Tu dois également simuler l'évolution autonome des autres nations.
+            systemInstruction: `Tu es le moteur de simulation géopolitique et militaire de Pamplemouche History.
+Le joueur dirige la nation : ${playerCountry}.
 
-MODIFICATIONS DE TERRITOIRES :
-Dans "changes", renvoie exclusivement les territoires ayant subi un changement de contrôle.
-Exemple : "changes": { "Belgium": { "owner": "France" } }
+RÈGLES STRICTES DE SIMULATION :
+
+1. RÉALISME MILITAIRE ET DÉFENSE :
+   - Une tentative d'annexion ou d'attaque N'EST PAS automatiquement réussie.
+   - Le pays ciblé se défendra avec ses forces et ses alliances.
+   - Prends en compte la durée simulée (${body.duration?.amount || 0} ${body.duration?.unit || ""}) : une annexion complète prend du temps et peut échouer, bloquer en guerre d'usure, ou déboucher sur un traité.
+
+2. CHANGEMENTS TERRITORIAUX ("changes") :
+   - Ne mets un territoire dans "changes" QUE si son contrôle effectif a changé durant cette période.
+   - Si le joueur (${playerCountry}) parvient à annexer un pays (ex: Belgique), indique : "changes": { "Belgique": { "owner": "${playerCountry}" } }.
+   - Si le pays ciblé repousse l'attaque ou que la guerre est toujours en cours sans prise de territoire, ne modifie pas le propriétaire dans "changes".
+
+3. ÉVÉNEMENTS AUTONOMES MONDIAUX :
+   - Tu DOIS également simuler des événements indépendants du joueur dans le reste du monde (tensions entre puissances, guerres secondaires, pactes, révolutions).
+   - Décris ces événements mondiaux dans le champ "message" et reflète d'éventuels annexions/conquêtes entre d'autres PNJ dans "changes".
 
 Format JSON strict obligatoire.`,
             prompt: `
-TEMPS :
+DURÉE DE SIMULATION :
 - Début : ${body.dateStart}
 - Fin : ${body.dateEnd}
 - Durée : ${body.duration?.amount || 0} ${body.duration?.unit || ""}
 
-PAYS DU JOUEUR : ${playerCountry}
+NATION DU JOUEUR : ${playerCountry}
 
-ACTIONS PLANIFIÉES PAR LE JOUEUR :
+ACTIONS SOUROUMISES PAR LE JOUEUR :
 ${JSON.stringify(body.actions || [], null, 2)}
 
-ÉTAT INITIAL DU MONDE :
+ÉTAT DU MONDE AVANT LA SIMULATION :
 ${JSON.stringify(body.worldState || {}, null, 2)}
 `,
             responseSchema: {
                 type: "OBJECT",
                 properties: {
-                    message: { type: "STRING" },
-                    events: { type: "ARRAY", items: { type: "STRING" } },
-                    changes: { type: "OBJECT", description: "Dictionnaire des territoires modifiés" }
+                    message: { 
+                        type: "STRING", 
+                        description: "Compte-rendu détaillé décrivant la défense du pays attaqué, le résultat des actions du joueur et les événements majeurs survenus dans le reste du monde." 
+                    },
+                    events: { 
+                        type: "ARRAY", 
+                        items: { type: "STRING" },
+                        description: "Liste des faits marquants (ex: 'La Belgique résiste à l'assaut', 'Pacte signé entre l'Allemagne et la Pologne')"
+                    },
+                    changes: { 
+                        type: "OBJECT", 
+                        description: "Dictionnaire des territoires dont le contrôleur a changé (ex: { 'Belgique': { 'owner': '${playerCountry}' } })" 
+                    }
                 },
                 required: ["message", "events", "changes"]
             }
