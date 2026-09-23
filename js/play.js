@@ -87,8 +87,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initializeMap() {
     const svg = d3.select("#worldMap");
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = window.innerWidth || document.documentElement.clientWidth || 360;
+    const height = window.innerHeight || document.documentElement.clientHeight || 640;
+
+    svg.attr("width", "100%")
+       .attr("height", "100%")
+       .attr("viewBox", `0 0 ${width} ${height}`);
 
     const projection = d3.geoNaturalEarth1()
         .scale(width / 5.8)
@@ -166,7 +170,7 @@ function drawMap(path) {
 ===================================================== */
 
 function selectCountry(element, territory) {
-    if (!territory) return;
+    if (!territory || !isGameStarted) return;
 
     if (selectedCountryElement) {
         d3.select(selectedCountryElement).classed("selected", false);
@@ -176,23 +180,6 @@ function selectCountry(element, territory) {
     d3.select(element).classed("selected", true);
     selectedCountry = territory.name;
 
-    // Phase 1 : Choix du pays au lancement
-    if (!isGameStarted) {
-        playerCountry = territory.name;
-
-        const display = document.getElementById("selectedCountryDisplay");
-        if (display) {
-            display.textContent = "Pays choisi : " + playerCountry;
-        }
-
-        const startBtn = document.getElementById("startGameBtn");
-        if (startBtn) {
-            startBtn.disabled = false;
-        }
-        return;
-    }
-
-    // Phase 2 : En cours de jeu
     const nameEl = document.getElementById("countryName");
     const infoEl = document.getElementById("countryInfo");
     const panelEl = document.getElementById("countryPanel");
@@ -207,8 +194,14 @@ function selectCountry(element, territory) {
 ===================================================== */
 
 function initializeControls() {
-    document.getElementById("startGameBtn").addEventListener("click", confirmStartGame);
-    document.getElementById("loadGameBtn").addEventListener("click", loadGameSave);
+    const loadBtn = document.getElementById("loadGameBtn");
+    if (loadBtn) {
+        loadBtn.addEventListener("click", () => {
+            loadGameSave();
+            document.getElementById("selectionScreen").classList.add("hidden");
+            document.getElementById("game").classList.remove("hidden");
+        });
+    }
 
     document.getElementById("actionButton").addEventListener("click", () => openAiPanel("actions"));
     document.getElementById("discussionButton").addEventListener("click", () => openAiPanel("discussion"));
@@ -245,11 +238,6 @@ function confirmStartGame() {
     if (!playerCountry) return;
 
     isGameStarted = true;
-    const startOverlay = document.getElementById("startOverlay");
-    if (startOverlay) {
-        startOverlay.classList.add("hidden");
-    }
-
     addAiMessage(`Bienvenue Chef d'État. Vous avez pris le contrôle de : **${playerCountry}**.`);
     saveGame();
 }
@@ -309,12 +297,13 @@ async function checkExistingSave() {
             });
             if (res.ok) hasSave = true;
         } catch (e) {
-            // Ignorer si pas d'endpoint save configuré
+            // Ignorer si pas d'endpoint save
         }
     }
 
     if (hasSave) {
-        document.getElementById("loadGameBtn").style.display = "block";
+        const loadBtn = document.getElementById("loadGameBtn");
+        if (loadBtn) loadBtn.style.display = "block";
     }
 }
 
@@ -360,10 +349,6 @@ async function loadGameSave() {
         renderActions();
 
         isGameStarted = true;
-        const startOverlay = document.getElementById("startOverlay");
-        if (startOverlay) {
-            startOverlay.classList.add("hidden");
-        }
         addAiMessage(`Partie chargée. Vous dirigez toujours **${playerCountry}**.`);
     }
 }
