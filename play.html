@@ -4,89 +4,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>History</title>
+    <title>History - Choix du pays</title>
     <link rel="stylesheet" href="./css/pamplemouche.css">
     <style>
-        /* Overlay de sélection non-bloquant pour la carte */
-        #startOverlay {
-            position: absolute;
-            top: 75px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            width: min(380px, calc(100vw - 32px));
-            pointer-events: auto;
+        /* =====================================================
+           ÉCRAN DE SÉLECTION EN GRILLE
+        ===================================================== */
+        #selectionScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: var(--bg, #090909);
+            color: var(--text, #f2f2f2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
         }
 
-        #startOverlay.hidden {
+        #selectionScreen.hidden {
             display: none !important;
         }
 
-        #startCard {
+        .selectContainer {
+            width: min(900px, 100%);
+            margin: auto;
+        }
+
+        .selectHeader {
             text-align: center;
-            background: rgba(18, 18, 18, 0.95);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border, #292929);
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8);
+            margin-bottom: 30px;
         }
 
-        .startHelp {
+        .selectHeader h1 {
+            font-size: clamp(24px, 5vw, 36px);
+            margin: 0 0 10px;
+        }
+
+        .selectHeader p {
             color: var(--muted, #929292);
-            font-size: 13px;
-            margin: 8px 0 14px;
-        }
-
-        #selectedCountryDisplay {
-            padding: 10px;
-            background: var(--surface2, #171717);
-            border-radius: 8px;
-            font-weight: bold;
-            margin-bottom: 14px;
-            color: var(--yellow, #ffc832);
             font-size: 14px;
         }
 
-        .startButtons {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        /* Grille des pays */
+        .countryGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 30px;
         }
 
-        .startButtons button {
-            width: 100%;
-        }
-
-        .country {
+        .countryCard {
+            background: var(--surface, #111111);
+            border: 1px solid var(--border, #292929);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
             cursor: pointer;
-            pointer-events: all;
+            transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .countryCard:hover {
+            border-color: #555;
+            transform: translateY(-2px);
+        }
+
+        .countryCard.selected {
+            border-color: var(--yellow, #ffc832);
+            background: var(--surface2, #171717);
+            box-shadow: 0 0 15px rgba(255, 200, 50, 0.2);
+        }
+
+        .countryCardName {
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* Barre d'action inférieure */
+        .selectActions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: sticky;
+            bottom: 20px;
+            background: rgba(9, 9, 9, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border, #292929);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .selectActions button {
+            min-width: 200px;
+        }
+
+        /* =====================================================
+           JEU
+        ===================================================== */
+        #game.hidden {
+            display: none !important;
         }
     </style>
 </head>
 
 <body class="gameBody">
 
-<div id="game">
+<!-- =================================================
+     ÉCRAN 1 : GRILLE DE SÉLECTION DU PAYS
+================================================== -->
+<div id="selectionScreen">
+    <div class="selectContainer">
+        
+        <div class="selectHeader">
+            <h1>Pamplemouche History</h1>
+            <p>Choisissez la nation que vous souhaitez incarner en 1936 :</p>
+        </div>
 
-    <!-- =================================================
-         CARTE
-    ================================================== -->
+        <div class="countryGrid" id="countryGrid">
+            <div class="countryCard" data-country="France">
+                <div class="countryCardName">France</div>
+            </div>
+            <div class="countryCard" data-country="Allemagne">
+                <div class="countryCardName">Allemagne</div>
+            </div>
+            <div class="countryCard" data-country="Royaume-Uni">
+                <div class="countryCardName">Royaume-Uni</div>
+            </div>
+            <div class="countryCard" data-country="États-Unis">
+                <div class="countryCardName">États-Unis</div>
+            </div>
+            <div class="countryCard" data-country="Russie">
+                <div class="countryCardName">URSS / Russie</div>
+            </div>
+            <div class="countryCard" data-country="Italie">
+                <div class="countryCardName">Italie</div>
+            </div>
+            <div class="countryCard" data-country="Japon">
+                <div class="countryCardName">Japon</div>
+            </div>
+            <div class="countryCard" data-country="Chine">
+                <div class="countryCardName">Chine</div>
+            </div>
+            <div class="countryCard" data-country="Espagne">
+                <div class="countryCardName">Espagne</div>
+            </div>
+            <div class="countryCard" data-country="Pologne">
+                <div class="countryCardName">Pologne</div>
+            </div>
+            <div class="countryCard" data-country="Brésil">
+                <div class="countryCardName">Brésil</div>
+            </div>
+            <div class="countryCard" data-country="Canada">
+                <div class="countryCardName">Canada</div>
+            </div>
+        </div>
+
+        <div class="selectActions">
+            <button class="button secondary" id="loadGameBtn" style="display: none;">
+                📁 Charger la partie
+            </button>
+            <button class="button primary" id="startGameBtn" disabled>
+                Commencer la partie
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- =================================================
+     ÉCRAN 2 : INTERFACE DE JEU ET CARTE
+================================================== -->
+<div id="game" class="hidden">
+
+    <!-- CARTE -->
     <div id="map">
         <svg id="worldMap"></svg>
     </div>
 
-    <!-- =================================================
-         DATE
-    ================================================== -->
+    <!-- DATE -->
     <div id="dateDisplay">
         1 janvier 1936
     </div>
 
-    <!-- =================================================
-         HEADER
-    ================================================== -->
+    <!-- HEADER -->
     <header class="gameHeader">
         <a href="/games.html" class="gameBrand">
             PAMPLEMOUCHE HISTORY
@@ -94,9 +201,7 @@
         <div id="gameAccount"></div>
     </header>
 
-    <!-- =================================================
-         PANNEAU IA
-    ================================================== -->
+    <!-- PANNEAU IA -->
     <div id="aiPanel">
         <div id="aiHeader">
             <div id="aiTitle">Discussion</div>
@@ -112,17 +217,13 @@
         </div>
     </div>
 
-    <!-- =================================================
-         INFOS PAYS
-    ================================================== -->
+    <!-- INFOS PAYS -->
     <div id="countryPanel">
         <div id="countryName">Pays</div>
         <div id="countryInfo" class="countryInfo">Cliquez sur un pays.</div>
     </div>
 
-    <!-- =================================================
-         TEMPS
-    ================================================== -->
+    <!-- TEMPS -->
     <div id="timeContainer">
         <button id="timeButton">⏱ Temps</button>
 
@@ -135,40 +236,13 @@
         </div>
     </div>
 
-    <!-- =================================================
-         BOUTONS
-    ================================================== -->
+    <!-- BOUTONS CONTRÔLE -->
     <div id="bottomControls">
         <button class="controlButton" id="actionButton">⚔ Action</button>
         <button class="controlButton" id="discussionButton">💬 Discussion</button>
     </div>
 
-    <!-- =================================================
-         CARTE FLOTTANTE DE SÉLECTION DU PAYS INITIAL
-    ================================================== -->
-    <div id="startOverlay">
-        <div id="startCard">
-            <div class="modalTitle">Nouvelle Partie</div>
-            <p class="startHelp">
-                Cliquez sur n'importe quel pays sur la carte pour le choisir.
-            </p>
-            <div id="selectedCountryDisplay">
-                Aucun pays sélectionné
-            </div>
-            <div class="startButtons">
-                <button class="button primary" id="startGameBtn" disabled>
-                    Commencer la partie
-                </button>
-                <button class="button secondary" id="loadGameBtn" style="display: none;">
-                    Charger la partie existante
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- =================================================
-         CUSTOM TIME
-    ================================================== -->
+    <!-- MODAL TEMPS PERSONNALISÉ -->
     <div id="customOverlay">
         <div id="customBox">
             <div class="modalTitle">Temps personnalisé</div>
@@ -194,8 +268,35 @@
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
-<script src="./js/auth.js"></script>
-<script src="./js/play.js"></script>
+<script src="./js/auth.js?v=3"></script>
+<script src="./js/play.js?v=3"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const cards = document.querySelectorAll(".countryCard");
+        const startBtn = document.getElementById("startGameBtn");
+
+        cards.forEach(card => {
+            card.addEventListener("click", () => {
+                cards.forEach(c => c.classList.remove("selected"));
+                card.classList.add("selected");
+                
+                playerCountry = card.dataset.country;
+                startBtn.disabled = false;
+                startBtn.textContent = `Incarner : ${playerCountry}`;
+            });
+        });
+
+        startBtn.addEventListener("click", () => {
+            if (!playerCountry) return;
+            
+            document.getElementById("selectionScreen").classList.add("hidden");
+            document.getElementById("game").classList.remove("hidden");
+            
+            confirmStartGame();
+        });
+    });
+</script>
 
 </body>
 </html>
